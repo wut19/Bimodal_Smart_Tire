@@ -92,10 +92,15 @@ def main(args):
     cfg.num_classes = len(vt_dataset.labels)
     train_data, val_data = split_data(vt_dataset, cfg)
     dataloader_dict = {'train': train_data, 'val': val_data}
+
+    if len(cfg.visual_modality)> 0:
+        visual_type = 1 if cfg.random_visual else len(cfg.visual_modality)
+    else:
+        visual_type= 0
     net = VTT(
         visual_size=cfg.img_size,
         visual_patch_size=cfg.patch_size,
-        visual_type=1 if cfg.random_visual else len(cfg.visual_modality) ,
+        visual_type= visual_type,
         tactile_size=cfg.img_size,
         tactile_patch_size=cfg.patch_size,
         use_tactile=cfg.tactile_modality,

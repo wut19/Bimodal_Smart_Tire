@@ -28,11 +28,12 @@ class PatchEmbedding(nn.Module):
 
     def forward(self, visual, tactile):
         """
-        Input shape: (batch, types, in_Channels, H, W)
-        Output shape: (batch,  in_channels, H, W)
+        Visual input shape: (batch, types, in_Channels, H, W)
+        Tactile input shape: (batch,  in_channels, H, W)
+        Output shape: (batch, N , embedd)
         """
         # visual
-        if visual[0] is not None:
+        if visual.ndim == 5:
             B, T, C, H, W = visual.shape
             visual = visual.view(B * T, C, H, W)
             pached_visual_feats = self.visual_proj(visual).flatten(2).transpose(1, 2).reshape(B, -1, self.embeded_dim)
@@ -40,7 +41,7 @@ class PatchEmbedding(nn.Module):
             pached_visual_feats = None
 
         # tactile
-        if tactile[0] is not None:
+        if tactile.ndim == 4:
             B, C, H, W = tactile.shape
             pached_tactile_feats = self.tactile_proj(tactile).flatten(2).transpose(1, 2)
         else:
@@ -139,7 +140,7 @@ class VTT(nn.Module):
                                           nn.LeakyReLU(0.2, inplace=True),
                                           nn.Linear(embed_dim//4, embed_dim//12))
 
-        self.compress_layer = nn.Sequential(nn.Linear((visual_patches*visual_type + tactile_pathes)*embed_dim//12, 640),
+        self.compress_layer = nn.Sequential(nn.Linear((visual_patches*visual_type + tactile_pathes*use_tactile)*embed_dim//12, 640),
                                           nn.LeakyReLU(0.2, inplace=True),
                                           nn.Linear(640, 288))
 
@@ -164,7 +165,10 @@ class VTT(nn.Module):
             visual: B x T x C x H x W
             tactile: B x C x H_ x W_
         """
-        B, T, nc, w, h = visual.shape
+        if visual.ndim == 5:
+            _, _, _, w, h = visual.shape
+        else:
+            _,_, w, h = tactile.shape
         patched_visual, patched_tactile = self.patch_embed(visual, tactile) # B x patch_num x embed_dim
         if patched_visual is not None and patched_tactile is not None:
             x = torch.cat((patched_visual, patched_tactile),dim=1) # B x N x embed_dim

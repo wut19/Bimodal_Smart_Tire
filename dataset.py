@@ -80,7 +80,7 @@ class VTDataset(Dataset):
                     visuals[-1] = self.transform(visuals[-1])
                 visuals = torch.stack(visuals, 0)
         else:
-            visuals = None
+            visuals = 0
 
         if self.use_tactile:
             if self.is_test:
@@ -88,7 +88,7 @@ class VTDataset(Dataset):
             tactile = Image.open(index_path)
             tactile = self.transform(tactile)
         else:
-            tactile = None
+            tactile = 0
         
         label = int(dir.split('/')[-1]) - 1
         label = F.one_hot(torch.tensor([label]), num_classes=len(self.labels)).squeeze(0)
@@ -145,7 +145,8 @@ if __name__ == "__main__":
     """ test """
     vt_dataset = VTDataset(
         data_dir='VisualTactileData',
-        used_visual_modalities=['1', '2'],
+        used_visual_modalities=[],
+        random_visual=True,
         use_tactile=True,
         is_test=True,
         )
