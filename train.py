@@ -49,7 +49,7 @@ def trainer(net, loss, optimizer, dataset, args):
                 _, val_pred = net(visual, tactile)
                 batch_loss = loss(val_pred, label.float())
 
-                val_acc += np.sum(np.argmax(train_pred.cpu().data.numpy(), axis=1) == np.argmax(label.cpu().data.numpy(),axis=1))
+                val_acc += np.sum(np.argmax(val_pred.cpu().data.numpy(), axis=1) == np.argmax(label.cpu().data.numpy(),axis=1))
                 val_loss += batch_loss.item()
             print('\n')
             print('[%03d/%03d] %2.2f sec(s) Train Acc: %3.6f Loss: %3.6f | Val Acc: %3.6f loss: %3.6f' % \
@@ -109,6 +109,8 @@ def main(args):
     
     if cfg.optimizer == 'SGD':
         optimizer = torch.optim.SGD(net.parameters(), lr=cfg.lr, momentum=cfg.momentum)
+    elif cfg.optimizer == 'Adam':
+        optimizer = torch.optim.Adam(net.parameters(), lr=cfg.lr)
     else:
         raise NotImplementedError(f'{cfg.optimizer} not implemented!!!')
     

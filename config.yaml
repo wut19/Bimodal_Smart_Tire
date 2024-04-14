@@ -2,12 +2,12 @@
 data_dir: VisualTactileData
 data_split: 0.8
 epoch: 100
-batch_size: 4
+batch_size: 32
 random_seed: 123
-num_workers: 0
+num_workers: 4
 device: 'cuda:0'
 
-optimizer: 'SGD'
+optimizer: Adam #'SGD'
 lr: 0.0001
 momentum: 0.9
 
@@ -30,7 +30,7 @@ qkv_bias: False
 qk_scale:
 drop_rate: 0.
 attn_drop_rate: 0.
-drop_path_rate: 0.
+drop_path_rate: 0.1
 
 
 
