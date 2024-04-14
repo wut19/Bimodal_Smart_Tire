@@ -8,10 +8,11 @@ num_workers: 0
 device: 'cuda:0'
 
 optimizer: 'SGD'
-lr: 0.01
+lr: 0.0001
 momentum: 0.9
 
 loss: CrossEntropyLoss
+
 # data
 img_size: 128
 patch_size: 16
@@ -19,6 +20,7 @@ in_chans: 3
 visual_modality: ['1', '2', '3']
 random_visual: True
 tactile_modality: True
+
 # network
 embed_dim: 384
 depth: 6

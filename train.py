@@ -108,7 +108,7 @@ def main(args):
         raise NotImplementedError(f'{cfg.optimizer} not implemented!!!')
     
     if cfg.optimizer == 'SGD':
-        optimizer = torch.optim.SGD(net.parameters(), lr=0.01, momentum=0.9)
+        optimizer = torch.optim.SGD(net.parameters(), lr=cfg.lr, momentum=cfg.momentum)
     else:
         raise NotImplementedError(f'{cfg.optimizer} not implemented!!!')
     
