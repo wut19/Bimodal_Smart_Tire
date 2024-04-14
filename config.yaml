@@ -1,0 +1,34 @@
+# train
+data_dir: VisualTactileData
+data_split: 0.8
+epoch: 100
+batch_size: 4
+random_seed: 123
+num_workers: 0
+device: 'cuda:0'
+
+optimizer: 'SGD'
+lr: 0.01
+momentum: 0.9
+
+loss: CrossEntropyLoss
+# data
+img_size: 128
+patch_size: 16
+in_chans: 3
+visual_modality: ['1', '2', '3']
+tactile_modality: True
+# network
+embed_dim: 384
+depth: 6
+num_heads: 8
+mlp_ratio: 4.
+qkv_bias: False
+qk_scale:
+drop_rate: 0.
+attn_drop_rate: 0.
+drop_path_rate: 0.
+
+
+
+
