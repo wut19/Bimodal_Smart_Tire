@@ -17,6 +17,7 @@ img_size: 128
 patch_size: 16
 in_chans: 3
 visual_modality: ['1', '2', '3']
+random_visual: True
 tactile_modality: True
 # network
 embed_dim: 384

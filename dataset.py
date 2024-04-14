@@ -26,10 +26,12 @@ class VTDataset(Dataset):
                 - ...
     This structure is easy to be generalize to more visual and tactile modalities.
     """
-    def __init__(self, data_dir=None, used_visual_modalities=[], use_tactile=False, size=128):
+    def __init__(self, data_dir=None, used_visual_modalities=[], random_visual=True, use_tactile=False, size=128, is_test=False):
         self.data_dir = data_dir
         self.used_visual_modalities = used_visual_modalities
         self.use_tactile = use_tactile
+        self.random_visual = random_visual
+        self.is_test = is_test
         assert len(used_visual_modalities)>0 or use_tactile, 'You need at least one modality!!!'
         
         self.transform = transforms.Compose([
@@ -57,20 +59,32 @@ class VTDataset(Dataset):
     def __getitem__(self, index):
         index_path = self.tactiles[index]
         dir, file_name = os.path.split(index_path)
-        
+        if self.is_test:
+            print('-'*20)
         if len(self.used_visual_modalities) > 0:
-            visuals = []
-            for i, visual_modality in enumerate(self.used_visual_modalities):
-                visual_path = os.path.join(self.visual_dir, visual_modality, dir.split('/')[-1], file_name)
-                # print(visual_path)
-                visuals.append(Image.open(visual_path))
-                visuals[-1] = self.transform(visuals[-1])
-            visuals = torch.stack(visuals, 0)
+            if self.random_visual:
+                modal_name = self.used_visual_modalities[np.random.randint(len(self.used_visual_modalities))]
+                visual_path = os.path.join(self.visual_dir, modal_name, dir.split('/')[-1], file_name)
+                if self.is_test:
+                    print(visual_path)
+                visuals = Image.open(visual_path)
+                visuals = self.transform(visuals)
+                visuals = visuals.unsqueeze(0)
+            else:
+                visuals = []
+                for i, visual_modality in enumerate(self.used_visual_modalities):
+                    visual_path = os.path.join(self.visual_dir, visual_modality, dir.split('/')[-1], file_name)
+                    if self.is_test:
+                        print(visual_path)
+                    visuals.append(Image.open(visual_path))
+                    visuals[-1] = self.transform(visuals[-1])
+                visuals = torch.stack(visuals, 0)
         else:
             visuals = None
 
         if self.use_tactile:
-            # print(index_path)
+            if self.is_test:
+                print(index_path)
             tactile = Image.open(index_path)
             tactile = self.transform(tactile)
         else:
@@ -78,7 +92,9 @@ class VTDataset(Dataset):
         
         label = int(dir.split('/')[-1]) - 1
         label = F.one_hot(torch.tensor([label]), num_classes=len(self.labels)).squeeze(0)
-        # print(label)
+        if self.is_test:
+            print(label)
+            print('-'*20)
 
         data = {
             'visual': visuals,
@@ -131,10 +147,11 @@ if __name__ == "__main__":
         data_dir='VisualTactileData',
         used_visual_modalities=['1', '2'],
         use_tactile=True,
+        is_test=True,
         )
     print(len(vt_dataset))
-    for key, value in vt_dataset[0].items():
-        print(key, value.shape if isinstance(value, torch.Tensor) else value)
+    # for key, value in vt_dataset[0].items():
+    #     print(key, value.shape if isinstance(value, torch.Tensor) else value)
 
     args = test_parse_args()
     train_data, val_data = split_data(vt_dataset, args)

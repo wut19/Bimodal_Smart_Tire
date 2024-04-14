@@ -73,13 +73,19 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+def set_seed(seed):
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
 def main(args):
     cfg = OmegaConf.load(args.cfg)
     print("using {} device.".format(cfg.device))
+    set_seed(cfg.random_seed)
 
     vt_dataset = VTDataset(
         data_dir=cfg.data_dir,
         used_visual_modalities=cfg.visual_modality,
+        random_visual=cfg.random_visual,
         use_tactile=cfg.tactile_modality,
         size=cfg.img_size
         )
@@ -89,7 +95,7 @@ def main(args):
     net = VTT(
         visual_size=cfg.img_size,
         visual_patch_size=cfg.patch_size,
-        visual_type=len(cfg.visual_modality),
+        visual_type=1 if cfg.random_visual else len(cfg.visual_modality) ,
         tactile_size=cfg.img_size,
         tactile_patch_size=cfg.patch_size,
         use_tactile=cfg.tactile_modality,
