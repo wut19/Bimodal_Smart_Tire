@@ -26,7 +26,7 @@ class VTDataset(Dataset):
                 - ...
     This structure is easy to be generalize to more visual and tactile modalities.
     """
-    def __init__(self, data_dir=None, used_visual_modalities=[], random_visual=True, use_tactile=False, size=128, is_test=False):
+    def __init__(self, data_dir=None, used_visual_modalities=[], random_visual=True, use_tactile=False, size=128, crop_size=300, is_test=False):
         self.data_dir = data_dir
         self.used_visual_modalities = used_visual_modalities
         self.use_tactile = use_tactile
@@ -34,7 +34,16 @@ class VTDataset(Dataset):
         self.is_test = is_test
         assert len(used_visual_modalities)>0 or use_tactile, 'You need at least one modality!!!'
         
-        self.transform = transforms.Compose([
+        self.transform_visual = transforms.Compose([
+            transforms.Resize([size, size]),
+            transforms.RandomHorizontalFlip(),
+            # transforms.RandomRotation(15),
+            transforms.ToTensor(),
+            # transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+        ])
+
+        self.transform_tactile = transforms.Compose([
+            transforms.CenterCrop(crop_size),
             transforms.Resize([size, size]),
             transforms.RandomHorizontalFlip(),
             # transforms.RandomRotation(15),
@@ -68,7 +77,7 @@ class VTDataset(Dataset):
                 if self.is_test:
                     print(visual_path)
                 visuals = Image.open(visual_path)
-                visuals = self.transform(visuals)
+                visuals = self.transform_visual(visuals)
                 visuals = visuals.unsqueeze(0)
             else:
                 visuals = []
@@ -77,7 +86,7 @@ class VTDataset(Dataset):
                     if self.is_test:
                         print(visual_path)
                     visuals.append(Image.open(visual_path))
-                    visuals[-1] = self.transform(visuals[-1])
+                    visuals[-1] = self.transform_visual(visuals[-1])
                 visuals = torch.stack(visuals, 0)
         else:
             visuals = 0
@@ -86,7 +95,7 @@ class VTDataset(Dataset):
             if self.is_test:
                 print(index_path)
             tactile = Image.open(index_path)
-            tactile = self.transform(tactile)
+            tactile = self.transform_tactile(tactile)
         else:
             tactile = 0
         

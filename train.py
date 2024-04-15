@@ -105,7 +105,8 @@ def main(args):
         used_visual_modalities=cfg.visual_modality,
         random_visual=cfg.random_visual,
         use_tactile=cfg.tactile_modality,
-        size=cfg.img_size
+        size=cfg.img_size,
+        crop_size=cfg.crop_size,
         )
     cfg.num_classes = len(vt_dataset.labels)
     train_data, val_data = split_data(vt_dataset, cfg)

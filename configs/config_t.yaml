@@ -22,6 +22,7 @@ loss: CrossEntropyLoss
 
 # data
 img_size: 128
+crop_size: 300
 patch_size: 16
 in_chans: 3
 visual_modality: []
