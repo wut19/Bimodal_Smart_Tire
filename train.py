@@ -5,11 +5,14 @@ import torch
 import torch.nn as nn
 from omegaconf import OmegaConf
 from tqdm import tqdm
+from tensorboardX import SummaryWriter
+import os
+import time
 
-from vtt import VTT
-from dataset import VTDataset, split_data
+from models.vtt import VTT
+from datasets.dataset import VTDataset, split_data
 
-def trainer(net, loss, optimizer, dataset, args):
+def trainer(net, loss, optimizer, dataset, writer, log_path, args):
     num_epoch = args.epoch
     train_data_length = dataset["train"].__len__() * args.batch_size
     val_data_length = dataset["val"].__len__()
@@ -40,7 +43,10 @@ def trainer(net, loss, optimizer, dataset, args):
 
             train_acc += np.sum(np.argmax(train_pred.cpu().data.numpy(), axis=1) == np.argmax(label.cpu().data.numpy(),axis=1))
             train_loss += batch_loss.item()
-
+        
+        writer.add_scalar('train/loss', train_loss, epoch)
+        writer.add_scalar('train/accuracy', train_acc, epoch)
+        
         net.eval()
         with torch.no_grad():
             for data in tqdm(dataset["val"]):
@@ -56,6 +62,9 @@ def trainer(net, loss, optimizer, dataset, args):
                   (epoch + 1, num_epoch, time.time() - epoch_start_time, \
                    train_acc / train_data_length, train_loss / train_data_length, val_acc / val_data_length,
                    val_loss / val_data_length))
+            
+        writer.add_scalar('val/loss', val_loss, epoch)
+        writer.add_scalar('val/accuracy', val_acc, epoch)
 
         if 1.5 * val_acc + train_acc > best_acc:
             best_acc = 1.5 * val_acc + train_acc
@@ -63,9 +72,12 @@ def trainer(net, loss, optimizer, dataset, args):
             best_train_acc = train_acc
             best_val_acc = val_acc
 
+        writer.add_scalar('best/train_acc', best_train_acc, epoch)
+        writer.add_scalar('best/val_acc', best_val_acc, epoch)
+
     best_train_acc = best_train_acc / train_data_length
     best_val_acc = best_val_acc / val_data_length
-    torch.save(best_model_wts, "./val_acc{0:.1f}-train_acc{1:.1f}.pth".format(best_val_acc, best_train_acc))
+    torch.save(best_model_wts, f"{log_path}/val_acc{0:.3f}-train_acc{1:.3f}.pth".format(best_val_acc, best_train_acc))
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train network')
@@ -78,10 +90,16 @@ def set_seed(seed):
     torch.manual_seed(seed)
 
 def main(args):
+    """ Load config and set up for training experiment """
     cfg = OmegaConf.load(args.cfg)
     print("using {} device.".format(cfg.device))
     set_seed(cfg.random_seed)
+    cur_time = time.strftime("%Y%m%d_%H%M%S", time.localtime())
+    log_path = os.path.join(cfg.exp, cur_time)
+    os.makedirs(log_path)
+    writer = SummaryWriter(log_path)
 
+    """ load and split dataset """
     vt_dataset = VTDataset(
         data_dir=cfg.data_dir,
         used_visual_modalities=cfg.visual_modality,
@@ -93,6 +111,7 @@ def main(args):
     train_data, val_data = split_data(vt_dataset, cfg)
     dataloader_dict = {'train': train_data, 'val': val_data}
 
+    """ load model """
     if len(cfg.visual_modality)> 0:
         visual_type = 1 if cfg.random_visual else len(cfg.visual_modality)
     else:
@@ -107,11 +126,13 @@ def main(args):
         **cfg,
     )
     
+    """ loss function """
     if cfg.loss == 'CrossEntropyLoss':
         loss = nn.CrossEntropyLoss()
     else:
         raise NotImplementedError(f'{cfg.optimizer} not implemented!!!')
     
+    """ optimizer """
     if cfg.optimizer == 'SGD':
         optimizer = torch.optim.SGD(net.parameters(), lr=cfg.lr, momentum=cfg.momentum)
     elif cfg.optimizer == 'Adam':
@@ -119,7 +140,15 @@ def main(args):
     else:
         raise NotImplementedError(f'{cfg.optimizer} not implemented!!!')
     
-    trainer(net, loss, optimizer, dataloader_dict, cfg)
+    """ scheduler """
+
+    if cfg.scheduler == 'StepLR':
+        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=cfg.period, gamma=cfg.gamma)
+    else: 
+        NotImplementedError(f'{cfg.scheduler} not implemented!!!')
+    
+    """ start train """
+    trainer(net, loss, optimizer, dataloader_dict, writer, log_path, cfg)
 
 if __name__ == "__main__":
     args = parse_args()

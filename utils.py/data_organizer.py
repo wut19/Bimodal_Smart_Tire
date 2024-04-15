@@ -27,7 +27,7 @@ def restructure_files(source_dir, destination_dir):
                     shutil.copy(os.path.join(src, file), os.path.join(dest, file))
 
 # Example usage:
-source_directory = "./all_data/visual"
-destination_directory = "./all_data/visual_modalities"
+source_directory = ""
+destination_directory = ""
 
 restructure_files(source_directory, destination_directory)
