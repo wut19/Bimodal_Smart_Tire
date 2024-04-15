@@ -44,8 +44,8 @@ def trainer(net, loss, optimizer, dataset, writer, log_path, args):
             train_acc += np.sum(np.argmax(train_pred.cpu().data.numpy(), axis=1) == np.argmax(label.cpu().data.numpy(),axis=1))
             train_loss += batch_loss.item()
         
-        writer.add_scalar('train/loss', train_loss, epoch)
-        writer.add_scalar('train/accuracy', train_acc, epoch)
+        writer.add_scalar('train/loss', train_loss / train_data_length, epoch)
+        writer.add_scalar('train/accuracy', train_acc / train_data_length, epoch)
         
         net.eval()
         with torch.no_grad():
@@ -63,8 +63,8 @@ def trainer(net, loss, optimizer, dataset, writer, log_path, args):
                    train_acc / train_data_length, train_loss / train_data_length, val_acc / val_data_length,
                    val_loss / val_data_length))
             
-        writer.add_scalar('val/loss', val_loss, epoch)
-        writer.add_scalar('val/accuracy', val_acc, epoch)
+        writer.add_scalar('val/loss', val_loss / val_data_length, epoch)
+        writer.add_scalar('val/accuracy', val_acc / val_data_length, epoch)
 
         if 1.5 * val_acc + train_acc > best_acc:
             best_acc = 1.5 * val_acc + train_acc
@@ -72,8 +72,8 @@ def trainer(net, loss, optimizer, dataset, writer, log_path, args):
             best_train_acc = train_acc
             best_val_acc = val_acc
 
-        writer.add_scalar('best/train_acc', best_train_acc, epoch)
-        writer.add_scalar('best/val_acc', best_val_acc, epoch)
+        writer.add_scalar('best/train_acc', best_train_acc / train_data_length, epoch)
+        writer.add_scalar('best/val_acc', best_val_acc / val_data_length, epoch)
 
     best_train_acc = best_train_acc / train_data_length
     best_val_acc = best_val_acc / val_data_length
