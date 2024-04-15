@@ -12,7 +12,7 @@ import time
 from models.vtt import VTT
 from datasets.dataset import VTDataset, split_data
 
-def trainer(net, loss, optimizer, dataset, writer, log_path, args):
+def trainer(net, loss, optimizer, scheduler, dataset, writer, log_path, args):
     num_epoch = args.epoch
     train_data_length = dataset["train"].__len__() * args.batch_size
     val_data_length = dataset["val"].__len__()
@@ -63,8 +63,12 @@ def trainer(net, loss, optimizer, dataset, writer, log_path, args):
                    train_acc / train_data_length, train_loss / train_data_length, val_acc / val_data_length,
                    val_loss / val_data_length))
             
+        scheduler.step()
+            
         writer.add_scalar('val/loss', val_loss / val_data_length, epoch)
         writer.add_scalar('val/accuracy', val_acc / val_data_length, epoch)
+
+        writer.add_scalar('train/lr', optimizer.state_dict()['param_groups'][0]['lr'], epoch)
 
         if 1.5 * val_acc + train_acc > best_acc:
             best_acc = 1.5 * val_acc + train_acc
@@ -77,7 +81,7 @@ def trainer(net, loss, optimizer, dataset, writer, log_path, args):
 
     best_train_acc = best_train_acc / train_data_length
     best_val_acc = best_val_acc / val_data_length
-    torch.save(best_model_wts, f"{log_path}/val_acc{0:.3f}-train_acc{1:.3f}.pth".format(best_val_acc, best_train_acc))
+    torch.save(best_model_wts, "{0}/val_acc{1:.2f}-train_acc{2:.2f}.pth".format(log_path, best_val_acc, best_train_acc))
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train network')
@@ -149,7 +153,7 @@ def main(args):
         NotImplementedError(f'{cfg.scheduler} not implemented!!!')
     
     """ start train """
-    trainer(net, loss, optimizer, dataloader_dict, writer, log_path, cfg)
+    trainer(net, loss, optimizer, scheduler, dataloader_dict, writer, log_path, cfg)
 
 if __name__ == "__main__":
     args = parse_args()
