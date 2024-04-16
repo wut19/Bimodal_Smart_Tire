@@ -50,7 +50,7 @@ class VTDataset(Dataset):
             transforms.RandomVerticalFlip(),
             # transforms.RandomRotation(15),
             transforms.ToTensor(),
-            # transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+            transforms.Normalize(mean=(0.8646, 0.8800, 0.8871), std=(0.0245, 0.0188, 0.0204))
         ])
 
         self.visual_dir = os.path.join(data_dir, 'visual')
@@ -98,6 +98,7 @@ class VTDataset(Dataset):
                 print(index_path)
             tactile = Image.open(index_path)
             tactile = self.transform_tactile(tactile)
+            tactile = torch.clip(tactile, 0, 1)
         else:
             tactile = 0
         
