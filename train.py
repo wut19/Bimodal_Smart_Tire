@@ -46,6 +46,10 @@ def trainer(net, loss, optimizer, scheduler, dataset, writer, log_path, args):
         
         writer.add_scalar('train/loss', train_loss / train_data_length, epoch)
         writer.add_scalar('train/accuracy', train_acc / train_data_length, epoch)
+
+        for name, param in net.named_parameters():
+            writer.add_histogram('net/' + name, param.clone().cpu().data.numpy(), epoch)
+            writer.add_histogram('net/' + name + '/grad', param.grad.clone().cpu().data.numpy(), epoch)
         
         net.eval()
         with torch.no_grad():
