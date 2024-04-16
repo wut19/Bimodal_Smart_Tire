@@ -37,6 +37,7 @@ class VTDataset(Dataset):
         self.transform_visual = transforms.Compose([
             transforms.Resize([size, size]),
             transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
             # transforms.RandomRotation(15),
             transforms.ToTensor(),
             # transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
@@ -46,6 +47,7 @@ class VTDataset(Dataset):
             transforms.CenterCrop(crop_size),
             transforms.Resize([size, size]),
             transforms.RandomHorizontalFlip(),
+            transforms.RandomVerticalFlip(),
             # transforms.RandomRotation(15),
             transforms.ToTensor(),
             # transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))

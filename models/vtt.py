@@ -25,6 +25,8 @@ class PatchEmbedding(nn.Module):
         # TODO: use different feature extractor for even smoky and dark environments
         self.visual_proj = nn.Conv2d(in_chan, embeded_dim, kernel_size=visual_patch_size, stride=visual_patch_size)
         self.tactile_proj = nn.Conv2d(in_chan, embeded_dim, kernel_size=tactile_patch_size, stride=tactile_patch_size)
+        self.batch_norm_v = nn.BatchNorm1d(embeded_dim)
+        self.batch_norm_t = nn.BatchNorm1d(embeded_dim)
 
     def forward(self, visual, tactile):
         """
@@ -36,17 +38,19 @@ class PatchEmbedding(nn.Module):
         if visual.ndim == 5:
             B, T, C, H, W = visual.shape
             visual = visual.view(B * T, C, H, W)
-            pached_visual_feats = self.visual_proj(visual).flatten(2).transpose(1, 2).reshape(B, -1, self.embeded_dim)
+            patched_visual_feats = self.visual_proj(visual).flatten(2).transpose(1, 2).reshape(B, -1, self.embeded_dim)
+            patched_visual_feats = self.batch_norm_v(patched_visual_feats.permute(0,2,1)).permute(0,2,1)
         else:
-            pached_visual_feats = None
+            patched_visual_feats = None
 
         # tactile
         if tactile.ndim == 4:
             B, C, H, W = tactile.shape
-            pached_tactile_feats = self.tactile_proj(tactile).flatten(2).transpose(1, 2)
+            patched_tactile_feats = self.tactile_proj(tactile).flatten(2).transpose(1, 2)
+            patched_tactile_feats = self.batch_norm_t(patched_tactile_feats.permute(0,2,1)).permute(0,2,1)
         else:
-            pached_tactile_feats = None
-        return pached_visual_feats, pached_tactile_feats
+            patched_tactile_feats = None
+        return patched_visual_feats, patched_tactile_feats
     
 class Attention(nn.Module):
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
