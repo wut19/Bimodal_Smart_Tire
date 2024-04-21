@@ -28,7 +28,6 @@ in_chans: 3
 visual_modality: ['1', '2', '3']
 random_visual: True
 tactile_modality: True
-tactile_modality: []
 
 # network
 embed_dim: 384
