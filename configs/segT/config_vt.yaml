@@ -1,14 +1,14 @@
 # experiment
-exp: logs/tactile_only 
+exp: logs/segT/visual_tactile 
 
 # train
-data_dir: VisualTactileData
+data_dir: VisualTactileData_segT
 data_split: 0.8
 epoch: 1000
 batch_size: 32
-random_seed: 128
+random_seed: 1
 num_workers: 4
-device: 'cuda:0'
+device: 'cuda:1'
 
 optimizer: Adam #'SGD'
 lr: 0.0001
@@ -25,9 +25,10 @@ img_size: 128
 crop_size: 300
 patch_size: 16
 in_chans: 3
-visual_modality: []
+visual_modality: ['1', '2', '3']
 random_visual: True
 tactile_modality: True
+tactile_modality: []
 
 # network
 embed_dim: 384

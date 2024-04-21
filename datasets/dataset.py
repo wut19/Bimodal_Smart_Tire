@@ -8,6 +8,7 @@ import os
 from PIL import Image
 import numpy as np
 import argparse
+import matplotlib.pyplot as plt
 
 class VTDataset(Dataset):
     """
@@ -21,9 +22,13 @@ class VTDataset(Dataset):
                 - modality_2(smoky)
                 ...
             - tactile
-                - class_1
-                - class_2
+                - modality_1(tactile)
+                    - class_1
+                    - class_2
+                    - ...
+                - modality_2(inside visual)
                 - ...
+
     This structure is easy to be generalize to more visual and tactile modalities.
     """
     def __init__(self, data_dir=None, used_visual_modalities=[], random_visual=True, use_tactile=False, size=128, crop_size=300, is_test=False):
@@ -50,7 +55,7 @@ class VTDataset(Dataset):
             transforms.RandomVerticalFlip(),
             # transforms.RandomRotation(15),
             transforms.ToTensor(),
-            transforms.Normalize(mean=(0.8646, 0.8800, 0.8871), std=(0.0245, 0.0188, 0.0204))
+            transforms.Normalize(mean=(0.6902, 0.7033, 0.7269), std=(0.4, 0.4, 0.4))
         ])
 
         self.visual_dir = os.path.join(data_dir, 'visual')
@@ -157,7 +162,7 @@ if __name__ == "__main__":
     """ test """
     vt_dataset = VTDataset(
         data_dir='VisualTactileData',
-        used_visual_modalities=[],
+        used_visual_modalities=['1', '2', '3'],
         random_visual=True,
         use_tactile=True,
         is_test=True,
@@ -166,9 +171,13 @@ if __name__ == "__main__":
     # for key, value in vt_dataset[0].items():
     #     print(key, value.shape if isinstance(value, torch.Tensor) else value)
 
+    # plt.imshow(vt_dataset[122]['tactile'].permute(1,2,0))
+    # plt.show()
+
     args = test_parse_args()
     train_data, val_data = split_data(vt_dataset, args)
+
     for batch in train_data:
-        print(batch['visual'].shape)
+        print(batch['visual'].max())
         print(batch['tactile'].shape)
         print(batch['label'].shape)
