@@ -1,5 +1,5 @@
 # experiment
-exp: logs/raw/tactile_only
+exp: logs/resnets/resnet18
 
 # train
 data_dir: VisualTactileData_raw
@@ -23,21 +23,18 @@ loss: CrossEntropyLoss
 
 # data
 img_size: 128
-patch_size: 16
-in_chans: 3
+in_channels: 3
 visual_modality: {}
 random_visual: True
-tactile_modality: {'t':'vt'}
+tactile_modality: {'t': 'vt'}
+num_classes: 12
 
-# network
-visual_embed_mapping: {}  # in above order, e.g. 0-> '1', 1-> '2', 2 -> '3'
-tactile_embed_mapping: {0: [0]}
-embed_dim: 384
-depth: 6
-num_heads: 8
-mlp_ratio: 4.
-qkv_bias: False
-qk_scale:
-drop_rate: 0.
-attn_drop_rate: 0.
-drop_path_rate: 0.1
+##  network
+# Convlayer sustitute
+out_channels: 64
+kernel_size: 7
+stride: 1
+padding: 3
+bias: False
+# feature dim
+feature_dim: 256

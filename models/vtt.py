@@ -176,6 +176,9 @@ class Block(nn.Module):
         return x
 
 class VTT(nn.Module):
+    """
+        NOTICE: this is a prior version of VTT, which is depreciated. Used MMVTT instead.
+    """
     def __init__(self, visual_size=84, visual_patch_size=14, visual_type=3, tactile_size=84, tactile_patch_size=2, use_tactile=True, in_chans=3, num_classes=12, embed_dim=384, depth=6,
                  num_heads=8, mlp_ratio=4., qkv_bias=False, qk_scale=None, drop_rate=0., attn_drop_rate=0.,
                  drop_path_rate=0., norm_layer=nn.LayerNorm, **kwargs):

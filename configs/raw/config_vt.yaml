@@ -1,5 +1,5 @@
 # experiment
-exp: logs/raw/tactile_only
+exp: logs/raw/visual_tactile
 
 # train
 data_dir: VisualTactileData_raw
@@ -25,12 +25,12 @@ loss: CrossEntropyLoss
 img_size: 128
 patch_size: 16
 in_chans: 3
-visual_modality: {}
+visual_modality: {'1':'v', '2':'v', '3':'v'}
 random_visual: True
 tactile_modality: {'t':'vt'}
 
 # network
-visual_embed_mapping: {}  # in above order, e.g. 0-> '1', 1-> '2', 2 -> '3'
+visual_embed_mapping: {0: [0]}  # in above order, e.g. 0-> '1', 1-> '2', 2 -> '3'
 tactile_embed_mapping: {0: [0]}
 embed_dim: 384
 depth: 6

@@ -79,7 +79,6 @@ def trainer(net, loss, optimizer, scheduler, dataset, writer, log_path, args):
                     train_acc / train_data_length, train_loss / train_data_length, val_acc / val_data_length,
                     val_loss / val_data_length))
                 
-            scheduler.step()
                 
             writer.add_scalar('val/loss', val_loss / val_data_length, epoch)
             writer.add_scalar('val/accuracy', val_acc / val_data_length, epoch)
@@ -95,6 +94,7 @@ def trainer(net, loss, optimizer, scheduler, dataset, writer, log_path, args):
 
             writer.add_scalar('best/train_acc', best_train_acc / train_data_length, epoch)
             writer.add_scalar('best/val_acc', best_val_acc / val_data_length, epoch)
+        scheduler.step()
 
     best_train_acc = best_train_acc / train_data_length
     best_val_acc = best_val_acc / val_data_length

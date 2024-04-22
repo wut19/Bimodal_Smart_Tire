@@ -193,6 +193,8 @@ class VTDataset(Dataset):
                 - ...
 
     This structure is easy to be generalize to more visual and tactile modalities.
+    
+    NOTICE: this is a prior version, which is depreciated. Use MMVTDataset instead.
     """
     def __init__(self, data_dir=None, used_visual_modalities=[], random_visual=True, use_tactile=False, size=128, crop_size=300, is_test=False):
         self.data_dir = data_dir
