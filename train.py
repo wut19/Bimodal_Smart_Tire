@@ -9,8 +9,8 @@ from tensorboardX import SummaryWriter
 import os
 import time
 
-from models.vtt import VTT
-from datasets.dataset import VTDataset, split_data
+from models.vtt import VTT, MMVTT
+from datasets.dataset import VTDataset, MMVTDataset, split_data
 
 def trainer(net, loss, optimizer, scheduler, dataset, writer, log_path, args):
     num_epoch = args.epoch
@@ -113,33 +113,49 @@ def main(args):
     writer = SummaryWriter(log_path)
 
     """ load and split dataset """
-    vt_dataset = VTDataset(
+    # vt_dataset = VTDataset(
+    #     data_dir=cfg.data_dir,
+    #     used_visual_modalities=cfg.visual_modality,
+    #     random_visual=cfg.random_visual,
+    #     use_tactile=cfg.tactile_modality,
+    #     size=cfg.img_size,
+    #     crop_size=cfg.crop_size,
+    #     )
+    vt_dataset = MMVTDataset(
         data_dir=cfg.data_dir,
-        used_visual_modalities=cfg.visual_modality,
+        visual_mod_trans_mapping=cfg.visual_modality,
         random_visual=cfg.random_visual,
-        use_tactile=cfg.tactile_modality,
+        tactile_mod_trans_mapping=cfg.tactile_modality,
         size=cfg.img_size,
-        crop_size=cfg.crop_size,
-        )
+    )
     cfg.num_classes = len(vt_dataset.labels)
     train_data, val_data = split_data(vt_dataset, cfg)
     dataloader_dict = {'train': train_data, 'val': val_data}
 
     """ load model """
     if len(cfg.visual_modality)> 0:
-        visual_type = 1 if cfg.random_visual else len(cfg.visual_modality)
+        visual_type = 1 if cfg.random_visual else len(list(cfg.visual_modality.keys()))
     else:
         visual_type= 0
-    net = VTT(
+    # net = VTT(
+    #     visual_size=cfg.img_size,
+    #     visual_patch_size=cfg.patch_size,
+    #     visual_type= visual_type,
+    #     tactile_size=cfg.img_size,
+    #     tactile_patch_size=cfg.patch_size,
+    #     use_tactile=cfg.tactile_modality,
+    #     **cfg,
+    # )
+    tactile_type = len(list(cfg.tactile_modality.keys()))
+    net = MMVTT(
         visual_size=cfg.img_size,
         visual_patch_size=cfg.patch_size,
         visual_type= visual_type,
         tactile_size=cfg.img_size,
         tactile_patch_size=cfg.patch_size,
-        use_tactile=cfg.tactile_modality,
+        tactile_type=tactile_type,
         **cfg,
     )
-    
     """ loss function """
     if cfg.loss == 'CrossEntropyLoss':
         loss = nn.CrossEntropyLoss()

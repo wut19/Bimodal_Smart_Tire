@@ -51,7 +51,65 @@ class PatchEmbedding(nn.Module):
         else:
             patched_tactile_feats = None
         return patched_visual_feats, patched_tactile_feats
-    
+
+class MMPatchEmbedding(nn.Module):
+    def __init__(self, visual_size=128, visual_patch_size=16, visual_embed_mapping={}, tactile_size=128, tactile_patch_size=16, tactile_embed_mapping={}, in_chan=3, embeded_dim=384):
+        super().__init__()
+        # visual
+        self.visual_patches = int((visual_size/visual_patch_size)*(visual_size/visual_patch_size))
+        self.visual_size = visual_size
+        self.visual_embed_mapping = visual_embed_mapping
+        self.visual_embed_type = len(list(visual_embed_mapping.keys()))
+        # tactile
+        self.tactile_patches = int((tactile_size/tactile_patch_size)*(tactile_size/tactile_patch_size))
+        self.tactile_size = tactile_patch_size
+        self.tactile_embed_mapping = tactile_embed_mapping
+        self.tactile_embed_type = len(list(tactile_embed_mapping.keys()))
+
+        self.embeded_dim = embeded_dim
+
+        """ use different feature extractor for visual and tactile """
+        self.visual_projs = nn.ModuleList([nn.Conv2d(in_chan, embeded_dim, kernel_size=visual_patch_size, stride=visual_patch_size) for i in range(self.visual_embed_type)])
+        self.visual_norms = nn.ModuleList([nn.LayerNorm(embeded_dim) for i in range(self.visual_embed_type)])
+        self.tactile_projs = nn.ModuleList([nn.Conv2d(in_chan, embeded_dim, kernel_size=tactile_patch_size, stride=tactile_patch_size) for i in range(self.tactile_embed_type)])
+        self.tactile_norms = nn.ModuleList([nn.LayerNorm(embeded_dim) for i in range(self.tactile_embed_type)])
+
+    def forward(self, visual, tactile):
+        """
+        Visual input shape: (batch, types, in_Channels, H, W)
+        Tactile input shape: (batch, types, in_channels, H, W)
+        Output shape: (batch, N , embedd)
+        """
+        # visual
+        if visual.ndim == 5:
+            patched_visual_feats = []
+            for key, index in self.visual_embed_mapping.items():
+                visual_seg = visual[:, index]
+                B, T, C, H, W = visual_seg.shape
+                visual_seg = visual_seg.view(B * T, C, H, W)
+                patched_visual_feat = self.visual_projs[key](visual_seg).flatten(2).transpose(1, 2).reshape(B, -1, self.embeded_dim)
+                patched_visual_feat = self.visual_norms[key](patched_visual_feat.reshape(-1, self.embeded_dim)).reshape(B, -1, self.embeded_dim)
+                patched_visual_feats.append(patched_visual_feat)
+            patched_visual_feats = torch.concat(patched_visual_feats, dim=1)
+        else:
+            patched_visual_feats = None
+
+        # tactile
+        if tactile.ndim == 5:
+            patched_tactile_feats = []
+            for key, index in self.tactile_embed_mapping.items():
+                tactile_seg = tactile[:, index]
+                B, T, C, H, W = tactile_seg.shape
+                tactile_seg = tactile_seg.view(B * T, C, H, W)
+                patched_tactile_feat = self.tactile_projs[key](tactile_seg).flatten(2).transpose(1, 2).reshape(B, -1, self.embeded_dim)
+                patched_tactile_feat = self.tactile_norms[key](patched_tactile_feat.reshape(-1, self.embeded_dim)).reshape(B, -1, self.embeded_dim)
+                patched_tactile_feats.append(patched_tactile_feat)
+            patched_tactile_feats = torch.concat(patched_tactile_feats, dim=1)
+        else:
+            patched_tactile_feats = None
+        
+        return patched_visual_feats, patched_tactile_feats
+
 class Attention(nn.Module):
     def __init__(self, dim, num_heads=8, qkv_bias=False, qk_scale=None, attn_drop=0., proj_drop=0.):
         super().__init__()
@@ -195,6 +253,107 @@ class VTT(nn.Module):
         img_tactile = self.compress_layer(img_tactile)
         pred = self.classifier(img_tactile)
         return img_tactile, pred
+    
+class MMVTT(nn.Module):
+    def __init__(self, 
+                 visual_size=128, 
+                 visual_patch_size=16, 
+                 visual_type=3, 
+                 visual_embed_mapping={0: [0, 1, 2]}, 
+                 tactile_size=128, 
+                 tactile_patch_size=16, 
+                 tactile_type=3, 
+                 tactile_embed_mapping={0: [0], 1: [1], 2:[2]}, 
+                 in_chans=3, 
+                 num_classes=12, 
+                 embed_dim=384, 
+                 depth=6,
+                 num_heads=8, 
+                 mlp_ratio=4., 
+                 qkv_bias=False, 
+                 qk_scale=None, 
+                 drop_rate=0., 
+                 attn_drop_rate=0.,
+                 drop_path_rate=0., 
+                 norm_layer=nn.LayerNorm, 
+                 **kwargs
+    ):
+        super().__init__()
+        self.patch_embed = MMPatchEmbedding(
+            visual_size=visual_size, visual_patch_size=visual_patch_size, tactile_size=tactile_size, visual_embed_mapping=visual_embed_mapping, 
+            tactile_patch_size=tactile_patch_size, tactile_embed_mapping=tactile_embed_mapping,
+            in_chan=in_chans, embeded_dim=embed_dim
+        )
+        visual_patches = self.patch_embed.visual_patches
+        tactile_pathes = self.patch_embed.tactile_patches
+
+        # position embedding
+        self.pos_embed = nn.Parameter(torch.zeros(1, visual_patches*visual_type + tactile_pathes*tactile_type, embed_dim))
+
+        dpr = [x.item() for x in torch.linspace(0, drop_path_rate, depth)]
+        self.blocks = nn.ModuleList([
+            Block(
+                dim=embed_dim, num_heads=num_heads,mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
+                drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer)
+            for i in range(depth)])
+
+        self.norm = norm_layer(embed_dim)
+        self.compress_patches = nn.Sequential(nn.Linear(embed_dim, embed_dim//4),
+                                          nn.LeakyReLU(0.2, inplace=True),
+                                          nn.Linear(embed_dim//4, embed_dim//12))
+
+        self.compress_layer = nn.Sequential(nn.Linear((visual_patches*visual_type + tactile_pathes*tactile_type)*embed_dim//12, 640),
+                                          nn.LeakyReLU(0.2, inplace=True),
+                                          nn.Linear(640, 288))
+
+        self.classifier = nn.Sequential(nn.Linear(288, num_classes),
+                                                 nn.Softmax(dim=-1))
+
+        trunc_normal_(self.pos_embed, std=.02)
+
+    def interpolate_pos_encoding(self, x, w: int, h: int):
+        """
+            x: B x N x embed_dim
+        """
+        npatch = x.shape[1]
+        N = self.pos_embed.shape[1]
+        if npatch == N and w == h:
+            return self.pos_embed
+        else:
+            raise ValueError('Position Encoder does not match dimension')
+
+    def prepare_tokens(self, visual, tactile):
+        """
+            visual: B x T x C x H x W
+            tactile: B x T x C x H_ x W_
+        """
+        if visual.ndim == 5:
+            _, _, _, w, h = visual.shape
+        else:
+            _, _, _, w, h = tactile.shape
+        
+        patched_visual, patched_tactile = self.patch_embed(visual, tactile) # B x patch_num x embed_dim
+        if patched_visual is not None and patched_tactile is not None:
+            x = torch.cat((patched_visual, patched_tactile),dim=1) # B x N x embed_dim
+        elif patched_visual is not None and patched_tactile is None:
+            x = patched_visual
+        elif patched_visual is None and patched_tactile is not None:
+            x = patched_tactile
+        # introduce contact embedding & alignment embedding
+        x = x + self.interpolate_pos_encoding(x, w, h)
+        return x
+
+    def forward(self, visual, tactile):
+        x = self.prepare_tokens(visual, tactile)
+        for blk in self.blocks:
+            x = blk(x)
+        x = self.norm(x)
+        img_tactile = self.compress_patches(x)
+        B, patches, dim = img_tactile.size()
+        img_tactile = img_tactile.view(B, -1)
+        img_tactile = self.compress_layer(img_tactile)
+        pred = self.classifier(img_tactile)
+        return img_tactile, pred
 
 def drop_path(x, drop_prob: float = 0., training: bool = False):
     if drop_prob == 0. or not training:
@@ -247,12 +406,12 @@ def _no_grad_trunc_normal_(tensor, mean, std, a, b):
     
 if __name__ == "__main__":
     """ test """
-    vtt = VTT()
+    vtt = MMVTT()
     B = 16
     T = 3
     C = 3
-    H=W=84
+    H=W=128
     a = torch.zeros((B,T,C,H,W))
-    b = torch.ones((B,C,H,W))
+    b = torch.ones((B,T,C,H,W))
     z, c = vtt(a,b)
     print(c.shape)
