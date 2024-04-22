@@ -8,6 +8,7 @@ from tqdm import tqdm
 from tensorboardX import SummaryWriter
 import os
 import time
+from sklearn.metrics import recall_score
 
 from models.vtt import VTT, MMVTT
 from datasets.dataset import VTDataset, MMVTDataset, split_data
@@ -51,38 +52,49 @@ def trainer(net, loss, optimizer, scheduler, dataset, writer, log_path, args):
         #     writer.add_histogram('net/' + name, param.clone().cpu().data.numpy(), epoch)
         #     if param.grad is not None:
         #         writer.add_histogram('net/' + name + '/grad', param.grad.clone().cpu().data.numpy(), epoch)
-        
-        net.eval()
-        with torch.no_grad():
-            for data in tqdm(dataset["val"]):
-                visual, tactile, label = data['visual'], data['tactile'], data['label']
-                visual, tactile, label = visual.to(args.device), tactile.to(args.device), label.to(args.device)
-                _, val_pred = net(visual, tactile)
-                batch_loss = loss(val_pred, label.float())
+        if epoch % args.val_interval == 0:
+            y_preds = []
+            y_trues = []
+            net.eval()
+            with torch.no_grad():
+                for data in tqdm(dataset["val"]):
+                    visual, tactile, label = data['visual'], data['tactile'], data['label']
+                    visual, tactile, label = visual.to(args.device), tactile.to(args.device), label.to(args.device)
+                    _, val_pred = net(visual, tactile)
+                    batch_loss = loss(val_pred, label.float())
 
-                val_acc += np.sum(np.argmax(val_pred.cpu().data.numpy(), axis=1) == np.argmax(label.cpu().data.numpy(),axis=1))
-                val_loss += batch_loss.item()
-            print('\n')
-            print('[%03d/%03d] %2.2f sec(s) Train Acc: %3.6f Loss: %3.6f | Val Acc: %3.6f loss: %3.6f' % \
-                  (epoch + 1, num_epoch, time.time() - epoch_start_time, \
-                   train_acc / train_data_length, train_loss / train_data_length, val_acc / val_data_length,
-                   val_loss / val_data_length))
-            
-        scheduler.step()
-            
-        writer.add_scalar('val/loss', val_loss / val_data_length, epoch)
-        writer.add_scalar('val/accuracy', val_acc / val_data_length, epoch)
+                    pred_labels = np.argmax(val_pred.cpu().data.numpy(), axis=1)
+                    true_labels = np.argmax(label.cpu().data.numpy(),axis=1)
+                    val_acc += np.sum(pred_labels == true_labels)
+                    val_loss += batch_loss.item()
+                    y_preds.append(pred_labels)
+                    y_trues.append(true_labels)
 
-        writer.add_scalar('train/lr', optimizer.state_dict()['param_groups'][0]['lr'], epoch)
+                y_preds = np.concatenate(y_preds)
+                y_trues = np.concatenate(y_trues)
+                val_recall = recall_score(y_pred=y_preds, y_true=y_trues, average='macro')
+                print('\n')
+                print('[%03d/%03d] %2.2f sec(s) Train Acc: %3.6f Loss: %3.6f | Val Acc: %3.6f loss: %3.6f' % \
+                    (epoch + 1, num_epoch, time.time() - epoch_start_time, \
+                    train_acc / train_data_length, train_loss / train_data_length, val_acc / val_data_length,
+                    val_loss / val_data_length))
+                
+            scheduler.step()
+                
+            writer.add_scalar('val/loss', val_loss / val_data_length, epoch)
+            writer.add_scalar('val/accuracy', val_acc / val_data_length, epoch)
+            writer.add_scalar('val/recall', val_recall, epoch)
 
-        if 1.5 * val_acc + train_acc > best_acc:
-            best_acc = 1.5 * val_acc + train_acc
-            best_model_wts = copy.deepcopy(net.state_dict())
-            best_train_acc = train_acc
-            best_val_acc = val_acc
+            writer.add_scalar('train/lr', optimizer.state_dict()['param_groups'][0]['lr'], epoch)
 
-        writer.add_scalar('best/train_acc', best_train_acc / train_data_length, epoch)
-        writer.add_scalar('best/val_acc', best_val_acc / val_data_length, epoch)
+            if 1.5 * val_acc + train_acc > best_acc:
+                best_acc = 1.5 * val_acc + train_acc
+                best_model_wts = copy.deepcopy(net.state_dict())
+                best_train_acc = train_acc
+                best_val_acc = val_acc
+
+            writer.add_scalar('best/train_acc', best_train_acc / train_data_length, epoch)
+            writer.add_scalar('best/val_acc', best_val_acc / val_data_length, epoch)
 
     best_train_acc = best_train_acc / train_data_length
     best_val_acc = best_val_acc / val_data_length

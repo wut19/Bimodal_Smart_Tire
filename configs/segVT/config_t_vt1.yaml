@@ -31,7 +31,7 @@ tactile_modality: {'t':'t', 'v':'vt'}
 
 # network
 visual_embed_mapping: {}  # in above order, e.g. 0-> '1', 1-> '2', 2 -> '3'
-tactile_embed_mapping: {0: [0], 1:[1]}
+tactile_embed_mapping: {0: [0, 1]}
 embed_dim: 384
 depth: 6
 num_heads: 8
