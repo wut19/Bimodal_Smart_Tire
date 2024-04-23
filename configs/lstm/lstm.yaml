@@ -1,5 +1,5 @@
 # experiment
-exp: logs/resnets/resnet50
+exp: logs/lstms/lstm
 
 # train
 data_dir: VisualTactileData_raw
@@ -23,6 +23,7 @@ loss: CrossEntropyLoss
 
 # data
 img_size: 128
+patch_size: 16
 in_channels: 3
 visual_modality: {}
 random_visual: True
@@ -37,4 +38,4 @@ stride: 1
 padding: 3
 bias: False
 # feature dim
-feature_dim: 256
+feature_dim: 384

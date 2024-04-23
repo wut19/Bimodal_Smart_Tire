@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision.models import resnet18
-import copy
+from omegaconf import OmegaConf
 
 def make_encoder(args):
     resnet = resnet18(pretrained=False)
@@ -31,11 +31,15 @@ class LSTMClassifier(nn.Module):
         x = x.permute(0,1,3,5,2,4,6).reshape(-1, C, self.patch_size, self.patch_size)
         x_feats = self.norm(self.proj(x)).reshape(B, -1, self.feature_dim)
 
-        _, feats, c = self.lstm(x_feats)
+        _, (feats, c) = self.lstm(x_feats)
+        feats = feats.squeeze(0)
         preds = self.classifier(feats)
         return preds
 
 if __name__ == "__main__":
-    resnet = resnet18(pretrained=False)
-    print(resnet)
-        
+    """ test """
+    cfg = OmegaConf.load('/home/wutong/visual-tactile/configs/lstm/lstm.yaml')
+    lstm_classifier = LSTMClassifier(args=cfg)
+    x = torch.zeros((32,2,3,128,128))
+    preds = lstm_classifier(x)
+    print(preds.shape)
