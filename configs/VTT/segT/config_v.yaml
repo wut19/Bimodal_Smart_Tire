@@ -1,5 +1,5 @@
 # experiment
-exp: logs/seg_T/visual_only
+exp: logs/VTT/seg_T/visual_only
 
 # train
 data_dir: VisualTactileData_segT

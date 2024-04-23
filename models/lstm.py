@@ -9,7 +9,7 @@ def make_encoder(args):
     resnet.fc = nn.Linear(512, args.feature_dim)
     return resnet
 
-class LSTMClassifier(nn.Module):
+class LSTMClassificationModel(nn.Module):
     def __init__(self, args) -> None:
         super().__init__()
         self.feature_dim = args.feature_dim
@@ -22,7 +22,7 @@ class LSTMClassifier(nn.Module):
             nn.Linear(self.feature_dim, args.num_classes),
             nn.Softmax(dim=-1)
         )
-    def forward(self, x):
+    def forward(self, _, x):
         # x_shape: B x T x C x H x W
 
         # patch feature extraction
@@ -34,12 +34,12 @@ class LSTMClassifier(nn.Module):
         _, (feats, c) = self.lstm(x_feats)
         feats = feats.squeeze(0)
         preds = self.classifier(feats)
-        return preds
+        return None, preds
 
 if __name__ == "__main__":
     """ test """
     cfg = OmegaConf.load('/home/wutong/visual-tactile/configs/lstm/lstm.yaml')
-    lstm_classifier = LSTMClassifier(args=cfg)
+    lstm_classifier = LSTMClassificationModel(args=cfg)
     x = torch.zeros((32,2,3,128,128))
-    preds = lstm_classifier(x)
+    _, preds = lstm_classifier(None, x)
     print(preds.shape)

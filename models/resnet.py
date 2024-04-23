@@ -79,7 +79,7 @@ class ResnetClassificationModel(nn.Module):
             nn.Softmax(dim=-1)
         )
 
-    def forward(self, x):
+    def forward(self, _, x):
         # x: B x T_ x C x H x W
 
         B, T, C, H, W = x.shape
@@ -89,7 +89,7 @@ class ResnetClassificationModel(nn.Module):
         # fusion and prediction
         feats = x_feats.reshape(B, -1)
         preds = self.classifier(feats)
-        return preds
+        return None, preds
 
 
 
@@ -98,5 +98,5 @@ if __name__ == "__main__":
     cfg = OmegaConf.load('/home/wutong/visual-tactile/configs/resnet/resnet.yaml')
     resnet_classifier = ResnetClassificationModel(cfg, types=2)
     x = torch.ones((32,2,3,128,128))
-    predict = resnet_classifier(x)
+    _, predict = resnet_classifier(None, x)
     print(predict.shape)

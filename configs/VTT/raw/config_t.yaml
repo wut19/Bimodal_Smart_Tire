@@ -1,5 +1,5 @@
 # experiment
-exp: logs/raw/tactile_only
+exp: logs/VTT/raw/tactile_only
 
 # train
 data_dir: VisualTactileData_raw

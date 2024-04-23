@@ -11,6 +11,8 @@ import time
 from sklearn.metrics import recall_score
 
 from models.vtt import VTT, MMVTT
+from models.resnet import ResnetClassificationModel
+from models.lstm import LSTMClassificationModel
 from datasets.dataset import VTDataset, MMVTDataset, split_data
 
 def trainer(net, loss, optimizer, scheduler, dataset, writer, log_path, args):
@@ -158,16 +160,26 @@ def main(args):
     #     use_tactile=cfg.tactile_modality,
     #     **cfg,
     # )
+
     tactile_type = len(list(cfg.tactile_modality.keys()))
-    net = MMVTT(
-        visual_size=cfg.img_size,
-        visual_patch_size=cfg.patch_size,
-        visual_type= visual_type,
-        tactile_size=cfg.img_size,
-        tactile_patch_size=cfg.patch_size,
-        tactile_type=tactile_type,
-        **cfg,
-    )
+
+    # """ transformer model"""
+    # net = MMVTT(
+    #     visual_size=cfg.img_size,
+    #     visual_patch_size=cfg.patch_size,
+    #     visual_type= visual_type,
+    #     tactile_size=cfg.img_size,
+    #     tactile_patch_size=cfg.patch_size,
+    #     tactile_type=tactile_type,
+    #     **cfg,
+    # )
+
+    """ resnet model """
+    net = ResnetClassificationModel(args=cfg, types=tactile_type)
+
+    # """ LSTM model """
+    # net = LSTMClassificationModel(args=cfg)
+
     """ loss function """
     if cfg.loss == 'CrossEntropyLoss':
         loss = nn.CrossEntropyLoss()
