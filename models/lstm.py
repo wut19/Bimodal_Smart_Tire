@@ -1,3 +1,7 @@
+"""
+    Modified from https://github.com/MaxDu17/PlayItByEar_Code
+"""
+
 import torch
 import torch.nn as nn
 from torchvision.models import resnet18
