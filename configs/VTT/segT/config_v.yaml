@@ -1,12 +1,12 @@
 # experiment
-exp: logs/raw/tactile_only
+exp: logs/seg_T/visual_only
 
 # train
-data_dir: VisualTactileData_raw
+data_dir: VisualTactileData_segT
 data_split: 0.8
 epoch: 1000
 batch_size: 32
-random_seed: 0
+random_seed: 128
 num_workers: 4
 device: 'cuda:1'
 val_interval: 10
@@ -25,13 +25,13 @@ loss: CrossEntropyLoss
 img_size: 128
 patch_size: 16
 in_chans: 3
-visual_modality: {}
+visual_modality: {'1':'v', '2':'v', '3':'v'}
 random_visual: True
-tactile_modality: {'t':'vt'}
+tactile_modality: {}
 
 # network
-visual_embed_mapping: {}  # in above order, e.g. 0-> '1', 1-> '2', 2 -> '3'
-tactile_embed_mapping: {0: [0]}
+visual_embed_mapping: {0: [0]}  # in above order, e.g. 0-> '1', 1-> '2', 2 -> '3'
+tactile_embed_mapping: {}
 embed_dim: 384
 depth: 6
 num_heads: 8

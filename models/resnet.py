@@ -50,6 +50,7 @@ class Encoder(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         if out_dim is not None:
             self.fc = nn.Linear(512, out_dim)
+            self.norm = nn.LayerNorm(out_dim)
 
     def forward(self, x):
         x = self.coord_conv(x)
@@ -60,15 +61,15 @@ class Encoder(nn.Module):
         x = torch.flatten(x, 1)
         if self.fc is not None:
             x = self.fc(x)
+            x = self.norm(x)
         return x
 
 class ResnetClassificationModel(nn.Module):
-    def __init__(self, args, visual_types=3, tactile_types=1) -> None:
+    def __init__(self, args, types=1) -> None:
         super().__init__()
-        self.visual_types = visual_types
-        self.tactile_types = tactile_types
+        self.types = types
         self.encoder = make_encoder(args)
-        self.fused_feature_dim = args.feature_dim * (self.visual_types + self.tactile_types)
+        self.fused_feature_dim = args.feature_dim * self.types
         self.classifier = nn.Sequential(
             nn.Linear(self.fused_feature_dim, 512),
             nn.LeakyReLU(0.2, inplace=True),
@@ -78,31 +79,24 @@ class ResnetClassificationModel(nn.Module):
             nn.Softmax(dim=-1)
         )
 
-    def forward(self, visuals, tactiles):
-        # visuals: B x T x C x H x W
-        # tactiles: B x T_ x C x H x W
+    def forward(self, x):
+        # x: B x T_ x C x H x W
 
-        # visuals
-        B, T, C, H, W = visuals.shape
-        visuals = visuals.view(B*T, C, H, W)
-        visual_feats = self.encoder(visuals).reshape(B, T, -1)
-
-        # tactiles
-        B, T, C, H, W = tactiles.shape
-        tactiles = tactiles.view(B*T, C, H, W)
-        tactiles_feats = self.encoder(tactiles).reshape(B, T, -1)
+        B, T, C, H, W = x.shape
+        x = x.view(B*T, C, H, W)
+        x_feats = self.encoder(x).reshape(B, T, -1)
 
         # fusion and prediction
-        feats = torch.cat([visual_feats, tactiles_feats], dim=1).reshape(B, -1)
+        feats = x_feats.reshape(B, -1)
         preds = self.classifier(feats)
         return preds
 
 
 
 if __name__ == "__main__":
+    """ test """
     cfg = OmegaConf.load('/home/wutong/visual-tactile/configs/resnet/resnet.yaml')
-    resnet_classifier = ResnetClassificationModel(cfg, visual_types=4, tactile_types=2)
-    visuals = torch.zeros((32,4,3,128,128))
-    tactiles = torch.ones((32,2,3,128,128))
-    predict = resnet_classifier(visuals, tactiles)
+    resnet_classifier = ResnetClassificationModel(cfg, types=2)
+    x = torch.ones((32,2,3,128,128))
+    predict = resnet_classifier(x)
     print(predict.shape)
