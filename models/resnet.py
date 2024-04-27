@@ -79,9 +79,14 @@ class ResnetClassificationModel(nn.Module):
             nn.Softmax(dim=-1)
         )
 
-    def forward(self, _, x):
+    def forward(self, visual, tactile):
         # x: B x T_ x C x H x W
-
+        if visual.ndim == 5 and tactile.ndim == 5:
+            x = torch.concat([visual, tactile], dim=1)
+        elif visual.ndim == 5 and tactile.ndim !=5:
+            x = visual
+        elif visual.ndim !=5 and tactile.ndim == 5:
+            x = tactile
         B, T, C, H, W = x.shape
         x = x.view(B*T, C, H, W)
         x_feats = self.encoder(x).reshape(B, T, -1)
@@ -96,7 +101,8 @@ class ResnetClassificationModel(nn.Module):
 if __name__ == "__main__":
     """ test """
     cfg = OmegaConf.load('/home/wutong/visual-tactile/configs/resnet/resnet.yaml')
-    resnet_classifier = ResnetClassificationModel(cfg, types=2)
+    resnet_classifier = ResnetClassificationModel(cfg, types=4)
     x = torch.ones((32,2,3,128,128))
-    _, predict = resnet_classifier(None, x)
+    y = torch.ones((32,2))
+    _, predict = resnet_classifier(x, x)
     print(predict.shape)
