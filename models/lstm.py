@@ -26,9 +26,14 @@ class LSTMClassificationModel(nn.Module):
             nn.Linear(self.feature_dim, args.num_classes),
             nn.Softmax(dim=-1)
         )
-    def forward(self, _, x):
+    def forward(self, visual, tactile):
         # x_shape: B x T x C x H x W
-
+        if visual.ndim == 5 and tactile.ndim == 5:
+            x = torch.concat([visual, tactile], dim=1)
+        elif visual.ndim == 5 and tactile.ndim !=5:
+            x = visual
+        elif visual.ndim !=5 and tactile.ndim == 5:
+            x = tactile
         # patch feature extraction
         B,T,C,H,W = x.shape
         x = x.view(B, T, C, H//self.patch_size, self.patch_size, W//self.patch_size, self.patch_size)
@@ -45,5 +50,6 @@ if __name__ == "__main__":
     cfg = OmegaConf.load('/home/wutong/visual-tactile/configs/lstm/lstm.yaml')
     lstm_classifier = LSTMClassificationModel(args=cfg)
     x = torch.zeros((32,2,3,128,128))
-    _, preds = lstm_classifier(None, x)
+    y = torch.zeros((32,2))
+    _, preds = lstm_classifier(x, x)
     print(preds.shape)
