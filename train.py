@@ -151,7 +151,7 @@ def main(args):
         )
     elif cfg.alg == 'resnet':
         """ resnet model """
-        net = ResnetClassificationModel(args=cfg, types=tactile_type)
+        net = ResnetClassificationModel(args=cfg, types=tactile_type+visual_type)
     elif cfg.alg == 'lstm':
         """ LSTM model """
         net = LSTMClassificationModel(args=cfg)
