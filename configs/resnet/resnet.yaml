@@ -1,9 +1,10 @@
 # experiment
 exp: logs/resnets/resnet50
+alg: resnet
 
 # train
-data_dir: VisualTactileData_raw
-data_split: 0.8
+data_dir: VisualTactileData_segT
+data_split: 0.7
 epoch: 1000
 batch_size: 32
 random_seed: 128
@@ -26,7 +27,7 @@ img_size: 128
 in_channels: 3
 visual_modality: {}
 random_visual: True
-tactile_modality: {'t': 'vt'}
+tactile_modality: {'t': 't'}
 num_classes: 12
 
 ##  network

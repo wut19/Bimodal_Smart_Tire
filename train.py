@@ -10,10 +10,10 @@ import os
 import time
 from sklearn.metrics import recall_score
 
-from models.vtt import VTT, MMVTT
+from models.mmvtt import MMVTT
 from models.resnet import ResnetClassificationModel
 from models.lstm import LSTMClassificationModel
-from datasets.dataset import VTDataset, MMVTDataset, split_data
+from datasets.dataset import MMVTDataset, split_data
 
 def trainer(net, loss, optimizer, scheduler, dataset, writer, log_path, args):
     num_epoch = args.epoch
@@ -50,10 +50,6 @@ def trainer(net, loss, optimizer, scheduler, dataset, writer, log_path, args):
         writer.add_scalar('train/loss', train_loss / train_data_length, epoch)
         writer.add_scalar('train/accuracy', train_acc / train_data_length, epoch)
 
-        # for name, param in net.named_parameters():
-        #     writer.add_histogram('net/' + name, param.clone().cpu().data.numpy(), epoch)
-        #     if param.grad is not None:
-        #         writer.add_histogram('net/' + name + '/grad', param.grad.clone().cpu().data.numpy(), epoch)
         if epoch % args.val_interval == 0:
             y_preds = []
             y_trues = []
@@ -127,14 +123,6 @@ def main(args):
     writer = SummaryWriter(log_path)
 
     """ load and split dataset """
-    # vt_dataset = VTDataset(
-    #     data_dir=cfg.data_dir,
-    #     used_visual_modalities=cfg.visual_modality,
-    #     random_visual=cfg.random_visual,
-    #     use_tactile=cfg.tactile_modality,
-    #     size=cfg.img_size,
-    #     crop_size=cfg.crop_size,
-    #     )
     vt_dataset = MMVTDataset(
         data_dir=cfg.data_dir,
         visual_mod_trans_mapping=cfg.visual_modality,
@@ -151,34 +139,24 @@ def main(args):
         visual_type = 1 if cfg.random_visual else len(list(cfg.visual_modality.keys()))
     else:
         visual_type= 0
-    # net = VTT(
-    #     visual_size=cfg.img_size,
-    #     visual_patch_size=cfg.patch_size,
-    #     visual_type= visual_type,
-    #     tactile_size=cfg.img_size,
-    #     tactile_patch_size=cfg.patch_size,
-    #     use_tactile=cfg.tactile_modality,
-    #     **cfg,
-    # )
 
     tactile_type = len(list(cfg.tactile_modality.keys()))
-
-    # """ transformer model"""
-    # net = MMVTT(
-    #     visual_size=cfg.img_size,
-    #     visual_patch_size=cfg.patch_size,
-    #     visual_type= visual_type,
-    #     tactile_size=cfg.img_size,
-    #     tactile_patch_size=cfg.patch_size,
-    #     tactile_type=tactile_type,
-    #     **cfg,
-    # )
-
-    """ resnet model """
-    net = ResnetClassificationModel(args=cfg, types=tactile_type)
-
-    # """ LSTM model """
-    # net = LSTMClassificationModel(args=cfg)
+    if cfg.alg == 'MMVTT':
+        """ transformer model"""
+        net = MMVTT(
+            img_size=cfg.img_size,
+            patch_size=cfg.patch_size,
+            types=[visual_type, tactile_type],
+            **cfg,
+        )
+    elif cfg.alg == 'resnet':
+        """ resnet model """
+        net = ResnetClassificationModel(args=cfg, types=tactile_type)
+    elif cfg.alg == 'lstm':
+        """ LSTM model """
+        net = LSTMClassificationModel(args=cfg)
+    else:
+        raise NotImplementedError(f'{cfg.alg} is not implemented!!!')
 
     """ loss function """
     if cfg.loss == 'CrossEntropyLoss':

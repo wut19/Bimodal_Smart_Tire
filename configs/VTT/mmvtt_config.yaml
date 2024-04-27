@@ -1,19 +1,19 @@
 # experiment
-exp: logs/lstms/lstm
-alg: lstm
+exp: logs/VTT/seg_T/tactile_only
+alg: MMVTT
 
 # train
 data_dir: VisualTactileData_segT
 data_split: 0.7
 epoch: 1000
 batch_size: 32
-random_seed: 128
+random_seed: 0
 num_workers: 4
 device: 'cuda:1'
 val_interval: 10
 
 optimizer: Adam #'SGD'
-lr: 0.0001
+lr: 1e-5
 momentum: 0.9
 
 scheduler: StepLR
@@ -25,18 +25,25 @@ loss: CrossEntropyLoss
 # data
 img_size: 128
 patch_size: 16
-in_channels: 3
+in_chans: 3
 visual_modality: {}
 random_visual: True
-tactile_modality: {'t': 't'}
-num_classes: 12
+tactile_modality: {'t':'t'}
 
-##  network
-# Convlayer sustitute
+## network
+# resnet
 out_channels: 64
 kernel_size: 7
 stride: 1
 padding: 3
 bias: False
-# feature dim
-feature_dim: 384
+# attention
+embed_dim: 384
+depth: 1
+num_heads: 4
+mlp_ratio: 4.
+qkv_bias: False
+qk_scale:
+drop_rate: 0.
+attn_drop_rate: 0.
+drop_path_rate: 0.1

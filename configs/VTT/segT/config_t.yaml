@@ -1,12 +1,13 @@
 # experiment
 exp: logs/VTT/seg_T/tactile_only
+alg: MMVTT
 
 # train
 data_dir: VisualTactileData_segT
-data_split: 0.8
+data_split: 0.7
 epoch: 1000
 batch_size: 32
-random_seed: 128
+random_seed: 0
 num_workers: 4
 device: 'cuda:1'
 val_interval: 10
@@ -33,8 +34,8 @@ tactile_modality: {'t':'t'}
 visual_embed_mapping: {}  # in above order, e.g. 0-> '1', 1-> '2', 2 -> '3'
 tactile_embed_mapping: {0: [0]}
 embed_dim: 384
-depth: 6
-num_heads: 8
+depth: 1
+num_heads: 4
 mlp_ratio: 4.
 qkv_bias: False
 qk_scale:
