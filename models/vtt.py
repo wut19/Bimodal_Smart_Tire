@@ -9,6 +9,7 @@ import warnings
 import math
 from torch.nn import functional as F
 from torch.distributions import Normal
+from torchvision.models import resnet18
 
 class PatchEmbedding(nn.Module):
     def __init__(self, visual_size=128, visual_patch_size=16, tactile_size=128, tactile_patch_size=16, in_chan=3, embeded_dim=384):
@@ -105,6 +106,59 @@ class MMPatchEmbedding(nn.Module):
                 patched_tactile_feat = self.tactile_norms[key](patched_tactile_feat.reshape(-1, self.embeded_dim)).reshape(B, -1, self.embeded_dim)
                 patched_tactile_feats.append(patched_tactile_feat)
             patched_tactile_feats = torch.concat(patched_tactile_feats, dim=1)
+        else:
+            patched_tactile_feats = None
+        
+        return patched_visual_feats, patched_tactile_feats
+
+class  MMResnetEmbedding(nn.Module):
+    def __init__(self, visual_size=128, visual_patch_size=16, visual_embed_mapping={}, tactile_size=128, tactile_patch_size=16, tactile_embed_mapping={}, 
+                 in_chan=3, out_channels=64, kernel_size=7, stride=1, padding=3, bias=False, embeded_dim=384) -> None:
+        super().__init__()
+        # visual
+        self.visual_patch_size = visual_patch_size
+        self.visual_patches = int((visual_size/visual_patch_size)*(visual_size/visual_patch_size))
+        self.visual_size = visual_size
+        self.visual_embed_mapping = visual_embed_mapping
+        self.visual_embed_type = len(list(visual_embed_mapping.keys()))
+        # tactile
+        self.tactile_patch_size = tactile_patch_size
+        self.tactile_patches = int((tactile_size/tactile_patch_size)*(tactile_size/tactile_patch_size))
+        self.tactile_size = tactile_patch_size
+        self.tactile_embed_mapping = tactile_embed_mapping
+        self.tactile_embed_type = len(list(tactile_embed_mapping.keys()))
+
+        self.embeded_dim = embeded_dim      
+
+        """ use resnet18 for all patches """ 
+        resnet = resnet18(pretrained=False)
+        resnet.conv1 =  nn.Conv2d(in_chan, out_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias)
+        resnet.fc = nn.Linear(512, embeded_dim)
+        self.proj = resnet
+
+        self.norm = nn.LayerNorm(embeded_dim)
+
+    def forward(self, visual, tactile):
+        """
+        Visual input shape: (batch, types, in_Channels, H, W)
+        Tactile input shape: (batch, types, in_channels, H, W)
+        Output shape: (batch, N , embedd)
+        """
+        # visual
+        if visual.ndim == 5:
+            B,T,C,H,W = visual.shape
+            visual = visual.view(B, T, C, H//self.visual_patch_size, self.visual_patch_size, W//self.visual_patch_size, self.visual_patch_size)
+            visual = visual.permute(0,1,3,5,2,4,6).reshape(-1, C, self.visual_patch_size, self.visual_patch_size)
+            patched_visual_feats = self.norm(self.proj(visual)).reshape(B, -1, self.embeded_dim)
+        else:
+            patched_visual_feats = None
+
+        # tactile
+        if tactile.ndim == 5:
+            B,T,C,H,W = tactile.shape
+            tactile = tactile.view(B, T, C, H//self.tactile_patch_size, self.tactile_patch_size, W//self.tactile_patch_size, self.tactile_patch_size)
+            tactile = tactile.permute(0,1,3,5,2,4,6).reshape(-1, C, self.tactile_patch_size, self.tactile_patch_size)
+            patched_tactile_feats = self.norm(self.proj(tactile)).reshape(B, -1, self.embeded_dim)
         else:
             patched_tactile_feats = None
         
@@ -268,6 +322,11 @@ class MMVTT(nn.Module):
                  tactile_type=3, 
                  tactile_embed_mapping={0: [0], 1: [1], 2:[2]}, 
                  in_chans=3, 
+                 out_channels=64, 
+                 kernel_size=7, 
+                 stride=1, 
+                 padding=3, 
+                 bias=False, 
                  num_classes=12, 
                  embed_dim=384, 
                  depth=6,
@@ -282,10 +341,15 @@ class MMVTT(nn.Module):
                  **kwargs
     ):
         super().__init__()
-        self.patch_embed = MMPatchEmbedding(
+        # self.patch_embed = MMPatchEmbedding(
+        #     visual_size=visual_size, visual_patch_size=visual_patch_size, tactile_size=tactile_size, visual_embed_mapping=visual_embed_mapping, 
+        #     tactile_patch_size=tactile_patch_size, tactile_embed_mapping=tactile_embed_mapping,
+        #     in_chan=in_chans, embeded_dim=embed_dim
+        # )
+        self.patch_embed = MMResnetEmbedding(
             visual_size=visual_size, visual_patch_size=visual_patch_size, tactile_size=tactile_size, visual_embed_mapping=visual_embed_mapping, 
             tactile_patch_size=tactile_patch_size, tactile_embed_mapping=tactile_embed_mapping,
-            in_chan=in_chans, embeded_dim=embed_dim
+            in_chan=in_chans, embeded_dim=embed_dim, out_channels=out_channels, kernel_size=kernel_size, stride=stride, padding=padding, bias=bias,
         )
         visual_patches = self.patch_embed.visual_patches
         tactile_pathes = self.patch_embed.tactile_patches
