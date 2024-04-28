@@ -159,15 +159,20 @@ class MMVTT(nn.Module):
             for i in range(depth)])
 
         self.norm = norm_layer(embed_dim)
-        self.compress_patches = nn.Sequential(nn.Linear(embed_dim, embed_dim//4),
-                                          nn.LeakyReLU(0.2, inplace=True),
-                                          nn.Linear(embed_dim//4, embed_dim//12))
+        # self.compress_patches = nn.Sequential(nn.Linear(embed_dim, embed_dim//4),
+        #                                   nn.LeakyReLU(0.2, inplace=True),
+        #                                   nn.Linear(embed_dim//4, embed_dim//12))
 
-        self.compress_layer = nn.Sequential(nn.Linear((num_patches*types[0] + num_patches*types[1])*embed_dim//12, 640),
-                                          nn.LeakyReLU(0.2, inplace=True),
-                                          nn.Linear(640, 288))
+        # self.compress_layer = nn.Sequential(nn.Linear((num_patches*types[0] + num_patches*types[1])*embed_dim//12, 640),
+        #                                   nn.LeakyReLU(0.2, inplace=True),
+        #                                   nn.Linear(640, 288))
 
-        self.classifier = nn.Sequential(nn.Linear(288, num_classes),
+        # self.classifier = nn.Sequential(nn.Linear(288, num_classes),
+        #                                          nn.Softmax(dim=-1))
+
+        self.classifier = nn.Sequential(nn.Linear((num_patches*types[0] + num_patches*types[1])*embed_dim, 256),
+                                        nn.LeakyReLU(0.2, inplace=True),
+                                        nn.Linear(256, num_classes),
                                                  nn.Softmax(dim=-1))
 
         trunc_normal_(self.pos_embed, std=.02)
@@ -209,10 +214,13 @@ class MMVTT(nn.Module):
         for blk in self.blocks:
             x = blk(x)
         x = self.norm(x)
-        img_tactile = self.compress_patches(x)
-        B, patches, dim = img_tactile.size()
-        img_tactile = img_tactile.view(B, -1)
-        img_tactile = self.compress_layer(img_tactile)
+        # img_tactile = self.compress_patches(x)
+        # B, patches, dim = img_tactile.size()
+        # img_tactile = img_tactile.view(B, -1)
+        # img_tactile = self.compress_layer(img_tactile)
+        # pred = self.classifier(img_tactile)
+
+        img_tactile = x.reshape(x.shape[0], -1)
         pred = self.classifier(img_tactile)
         return img_tactile, pred
 

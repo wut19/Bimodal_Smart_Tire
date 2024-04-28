@@ -144,8 +144,6 @@ def main(args):
     if cfg.alg == 'MMVTT':
         """ transformer model"""
         net = MMVTT(
-            img_size=cfg.img_size,
-            patch_size=cfg.patch_size,
             types=[visual_type, tactile_type],
             **cfg,
         )

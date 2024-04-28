@@ -71,9 +71,7 @@ class ResnetClassificationModel(nn.Module):
         self.encoder = make_encoder(args)
         self.fused_feature_dim = args.feature_dim * self.types
         self.classifier = nn.Sequential(
-            nn.Linear(self.fused_feature_dim, 512),
-            nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(512, 256),
+            nn.Linear(self.fused_feature_dim, 256),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(256, args.num_classes),
             nn.Softmax(dim=-1)

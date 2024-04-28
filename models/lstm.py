@@ -23,7 +23,9 @@ class LSTMClassificationModel(nn.Module):
         self.norm = nn.LayerNorm(self.feature_dim)
         self.lstm = nn.LSTM(self.feature_dim, self.feature_dim, batch_first=True)
         self.classifier = nn.Sequential(
-            nn.Linear(self.feature_dim, args.num_classes),
+            nn.Linear(self.feature_dim, 256),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(256, args.num_classes),
             nn.Softmax(dim=-1)
         )
     def forward(self, visual, tactile):
