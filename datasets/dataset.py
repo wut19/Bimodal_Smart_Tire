@@ -67,8 +67,8 @@ class MMVTDataset(Dataset):
             't': transforms.Compose([
                     transforms.CenterCrop(300),   # used when segmented and processing tactile part independently
                     transforms.Resize([size, size]),
-                    # transforms.RandomHorizontalFlip(),
-                    # transforms.RandomVerticalFlip(),
+                    transforms.RandomHorizontalFlip(),
+                    transforms.RandomVerticalFlip(),
                     # transforms.RandomRotation(15),
                     transforms.ToTensor(),
                     transforms.Normalize(mean=(0.6902, 0.7033, 0.7269), std=(0.4, 0.4, 0.4))
