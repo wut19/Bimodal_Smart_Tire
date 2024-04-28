@@ -3,7 +3,7 @@ exp: logs/wo_outside_visual/tactile_only/mmvtt
 alg: MMVTT
 
 # train
-data_dir: VisualTactileData_segT
+data_dir: VisualTactileData_all
 data_split: 0.7
 epoch: 150
 batch_size: 32

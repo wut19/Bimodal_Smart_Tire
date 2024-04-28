@@ -1,5 +1,5 @@
 # experiment
-exp: logs/wo_outside_visual/visual_only/lstm
+exp: logs/wo_outside_visual/raw_visual_tactile/lstm
 alg: lstm
 
 # train
@@ -28,7 +28,7 @@ patch_size: 16
 in_channels: 3
 visual_modality: {}
 random_visual: True
-tactile_modality: {'v': 'vt'}
+tactile_modality: {'vt': 'vt'}
 num_classes: 12
 
 ##  network

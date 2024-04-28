@@ -120,6 +120,7 @@ def main(args):
     cur_time = time.strftime("%Y%m%d_%H%M%S", time.localtime())
     log_path = os.path.join(cfg.exp, cur_time)
     os.makedirs(log_path)
+    OmegaConf.save(cfg, os.path.join(log_path, 'config.yaml'))
     writer = SummaryWriter(log_path)
 
     """ load and split dataset """

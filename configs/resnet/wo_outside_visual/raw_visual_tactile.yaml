@@ -1,6 +1,6 @@
 # experiment
-exp: logs/wo_outside_visual/visual_only/lstm
-alg: lstm
+exp: logs/wo_outside_visual/raw_visual_tactile/resnet
+alg: resnet
 
 # train
 data_dir: VisualTactileData_all
@@ -28,7 +28,7 @@ patch_size: 16
 in_channels: 3
 visual_modality: {}
 random_visual: True
-tactile_modality: {'v': 'vt'}
+tactile_modality: {'vt': 'vt'}
 num_classes: 12
 
 ##  network
@@ -39,4 +39,4 @@ stride: 1
 padding: 3
 bias: False
 # feature dim
-feature_dim: 384
+feature_dim: 256

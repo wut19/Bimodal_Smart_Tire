@@ -1,6 +1,6 @@
 # experiment
-exp: logs/wo_outside_visual/visual_only/lstm
-alg: lstm
+exp: logs/wo_outside_visual/seg_visual_tactile/mmvtt
+alg: MMVTT
 
 # train
 data_dir: VisualTactileData_all
@@ -25,18 +25,25 @@ loss: CrossEntropyLoss
 # data
 img_size: 128
 patch_size: 16
-in_channels: 3
+in_chans: 3
 visual_modality: {}
 random_visual: True
-tactile_modality: {'v': 'vt'}
-num_classes: 12
+tactile_modality: {'v':'vt', 't': 't'}
 
-##  network
-# Convlayer sustitute
+## network
+# resnet
 out_channels: 64
 kernel_size: 7
 stride: 1
 padding: 3
 bias: False
-# feature dim
-feature_dim: 384
+# attention
+embed_dim: 384
+depth: 1
+num_heads: 4
+mlp_ratio: 4.
+qkv_bias: False
+qk_scale:
+drop_rate: 0.
+attn_drop_rate: 0.
+drop_path_rate: 0.1
