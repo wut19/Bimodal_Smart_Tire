@@ -22,6 +22,9 @@ class LSTMClassificationModel(nn.Module):
         self.proj = make_encoder(args)
         self.norm = nn.LayerNorm(self.feature_dim)
         self.lstm = nn.LSTM(self.feature_dim, self.feature_dim, batch_first=True)
+        self.proj_layer = nn.Sequential(nn.Linear(self.feature_dim, 640),   # used for fair comparison
+                                          nn.LeakyReLU(0.2, inplace=True),
+                                          nn.Linear(640, self.feature_dim))
         self.classifier = nn.Sequential(
             nn.Linear(self.feature_dim, 256),
             nn.LeakyReLU(0.2, inplace=True),
@@ -44,6 +47,7 @@ class LSTMClassificationModel(nn.Module):
 
         _, (feats, c) = self.lstm(x_feats)
         feats = feats.squeeze(0)
+        feats = self.proj_layer(feats)
         preds = self.classifier(feats)
         return None, preds
 

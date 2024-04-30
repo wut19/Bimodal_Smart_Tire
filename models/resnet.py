@@ -70,8 +70,11 @@ class ResnetClassificationModel(nn.Module):
         self.types = types
         self.encoder = make_encoder(args)
         self.fused_feature_dim = args.feature_dim * self.types
+        self.compress_layer = nn.Sequential(nn.Linear(self.fused_feature_dim, self.fused_feature_dim//2),
+                                    nn.LeakyReLU(0.2, inplace=True),
+                                    nn.Linear(self.fused_feature_dim//2, self.fused_feature_dim//4))
         self.classifier = nn.Sequential(
-            nn.Linear(self.fused_feature_dim, 256),
+            nn.Linear(self.fused_feature_dim//4, 256),
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(256, args.num_classes),
             nn.Softmax(dim=-1)
@@ -91,6 +94,7 @@ class ResnetClassificationModel(nn.Module):
 
         # fusion and prediction
         feats = x_feats.reshape(B, -1)
+        feats = self.compress_layer(feats)
         preds = self.classifier(feats)
         return None, preds
 

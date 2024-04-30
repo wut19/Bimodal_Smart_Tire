@@ -146,6 +146,11 @@ class MMVTT(nn.Module):
             patch_size=patch_size, in_chan=in_chans, embed_dim=embed_dim, out_channels=out_channels, 
             kernel_size=kernel_size, stride=stride, padding=padding, bias=bias,
         )
+        if types[0] > 0:
+            self.visual_patch_embed = MMResnetEmbedding(
+                patch_size=patch_size, in_chan=in_chans, embed_dim=embed_dim, out_channels=out_channels, 
+                kernel_size=kernel_size, stride=stride, padding=padding, bias=bias,
+            )
         num_patches = (img_size // patch_size) **2
 
         # position embedding
@@ -159,20 +164,15 @@ class MMVTT(nn.Module):
             for i in range(depth)])
 
         self.norm = norm_layer(embed_dim)
-        # self.compress_patches = nn.Sequential(nn.Linear(embed_dim, embed_dim//4),
-        #                                   nn.LeakyReLU(0.2, inplace=True),
-        #                                   nn.Linear(embed_dim//4, embed_dim//12))
+        self.compress_patches = nn.Sequential(nn.Linear(embed_dim, embed_dim//4),
+                                          nn.LeakyReLU(0.2, inplace=True),
+                                          nn.Linear(embed_dim//4, embed_dim//12))
 
-        # self.compress_layer = nn.Sequential(nn.Linear((num_patches*types[0] + num_patches*types[1])*embed_dim//12, 640),
-        #                                   nn.LeakyReLU(0.2, inplace=True),
-        #                                   nn.Linear(640, 288))
+        self.compress_layer = nn.Sequential(nn.Linear((num_patches*types[0] + num_patches*types[1])*embed_dim//12, 640),
+                                          nn.LeakyReLU(0.2, inplace=True),
+                                          nn.Linear(640, 288))
 
-        # self.classifier = nn.Sequential(nn.Linear(288, num_classes),
-        #                                          nn.Softmax(dim=-1))
-
-        self.classifier = nn.Sequential(nn.Linear((num_patches*types[0] + num_patches*types[1])*embed_dim, 256),
-                                        nn.LeakyReLU(0.2, inplace=True),
-                                        nn.Linear(256, num_classes),
+        self.classifier = nn.Sequential(nn.Linear(288, num_classes),
                                                  nn.Softmax(dim=-1))
 
         trunc_normal_(self.pos_embed, std=.02)
@@ -195,10 +195,13 @@ class MMVTT(nn.Module):
         """
         if visual.ndim == 5:
             _, _, _, w, h = visual.shape
+            patched_visual,_  = self.visual_patch_embed(visual, torch.zeros(1,))
         else:
             _, _, _, w, h = tactile.shape
-        
-        patched_visual, patched_tactile = self.patch_embed(visual, tactile) # B x patch_num x embed_dim
+            patched_visual = None
+
+        _, patched_tactile = self.patch_embed(torch.zeros(1,), tactile)
+        # patched_visual, patched_tactile = self.patch_embed(visual, tactile) # B x patch_num x embed_dim
         if patched_visual is not None and patched_tactile is not None:
             x = torch.cat((patched_visual, patched_tactile),dim=1) # B x N x embed_dim
         elif patched_visual is not None and patched_tactile is None:
@@ -214,13 +217,10 @@ class MMVTT(nn.Module):
         for blk in self.blocks:
             x = blk(x)
         x = self.norm(x)
-        # img_tactile = self.compress_patches(x)
-        # B, patches, dim = img_tactile.size()
-        # img_tactile = img_tactile.view(B, -1)
-        # img_tactile = self.compress_layer(img_tactile)
-        # pred = self.classifier(img_tactile)
-
-        img_tactile = x.reshape(x.shape[0], -1)
+        img_tactile = self.compress_patches(x)
+        B, patches, dim = img_tactile.size()
+        img_tactile = img_tactile.view(B, -1)
+        img_tactile = self.compress_layer(img_tactile)
         pred = self.classifier(img_tactile)
         return img_tactile, pred
 

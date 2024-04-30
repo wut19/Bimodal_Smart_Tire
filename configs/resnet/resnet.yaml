@@ -38,4 +38,4 @@ stride: 1
 padding: 3
 bias: False
 # feature dim
-feature_dim: 256
+feature_dim: 384

@@ -37,12 +37,12 @@ def plot_results(args):
     """ curves """
     ea = event_accumulator.EventAccumulator(os.path.join(dir, file_log)) 
     ea.Reload()
-    val_loss = ea.scalars.Items('val/loss')
+    train_loss = ea.scalars.Items('train/loss')
     val_accuracy = ea.scalars.Items('val/accuracy')
     val_recall = ea.scalars.Items('val/recall')
     # plot loss
-    steps = [i.step for i in val_loss]
-    loss = [i.value for i in val_loss]
+    steps = [i.step for i in train_loss]
+    loss = [i.value for i in train_loss]
     plt.figure()
     plt.plot(steps, loss)
     plt.title('Loss')

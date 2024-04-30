@@ -5,19 +5,19 @@ alg: lstm
 # train
 data_dir: VisualTactileData_all
 data_split: 0.7
-epoch: 150
+epoch: 80
 batch_size: 32
 random_seed: 0
 num_workers: 4
 device: 'cuda:1'
-val_interval: 3
+val_interval: 2
 
 optimizer: Adam #'SGD'
-lr: 1e-5
+lr: 2e-5
 momentum: 0.9
 
 scheduler: StepLR
-period: 30
+period: 5
 gamma: 0.9
 
 loss: CrossEntropyLoss

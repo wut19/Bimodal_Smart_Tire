@@ -15,7 +15,27 @@ from models.resnet import ResnetClassificationModel
 from models.lstm import LSTMClassificationModel
 from datasets.dataset import MMVTDataset, split_data
 
+def add_noise(batch_visual, amount=0.01, s_vs_p=0.5):
+    if batch_visual.ndim != 4:
+        return batch_visual
+    B, C, H, W = batch_visual.shape
+    num_salt = np.ceil(amount * H*W * s_vs_p)
+    coords = [np.random.randint(0,i - 1, int(num_salt)) for i in [H,W,C]]
+    batch_visual[..., coords[0],coords[1]] = (torch.ones((B, C, 1)) - torch.Tensor([0.485, 0.456, 0.406]).view(1,3,1)) / torch.Tensor([0.229, 0.224, 0.225]).view(1,3,1)
+    num_pepper = np.ceil(amount * H*W  * (1. - s_vs_p))
+    coords = [np.random.randint(0,i - 1, int(num_pepper)) for i in [H,W]]
+    batch_visual[..., coords[0],coords[1]] = (torch.zeros((B, C, 1)) - torch.Tensor([0.485, 0.456, 0.406]).view(1,3,1)) / torch.Tensor([0.229, 0.224, 0.225]).view(1,3,1)
+    return batch_visual
+
 def trainer(net, loss, optimizer, scheduler, dataset, writer, log_path, args):
+    used_modalities = list(args.tactile_modality.keys())
+    if 'v' in used_modalities:
+        tac_v_index = used_modalities.index('v')
+    elif 'vt' in used_modalities: 
+        tac_v_index = used_modalities.index('vt')
+    else:
+        tac_v_index = -1
+    print(tac_v_index)
     num_epoch = args.epoch
     train_data_length = dataset["train"].__len__() * args.batch_size
     val_data_length = dataset["val"].__len__()
@@ -37,6 +57,8 @@ def trainer(net, loss, optimizer, scheduler, dataset, writer, log_path, args):
         net.train()  
         for data in tqdm(dataset["train"]):
             visual, tactile, label = data['visual'], data['tactile'], data['label']
+            if tac_v_index >= 0 :
+                tactile[:, tac_v_index] = add_noise(tactile[:,tac_v_index], amount=0.01) 
             visual, tactile, label = visual.to(args.device), tactile.to(args.device), label.to(args.device)
             optimizer.zero_grad()
             _, train_pred = net(visual, tactile) 
@@ -57,6 +79,8 @@ def trainer(net, loss, optimizer, scheduler, dataset, writer, log_path, args):
             with torch.no_grad():
                 for data in tqdm(dataset["val"]):
                     visual, tactile, label = data['visual'], data['tactile'], data['label']
+                    if tac_v_index >= 0 :
+                        tactile[:, tac_v_index] = add_noise(tactile[:,tac_v_index], amount=0.02) 
                     visual, tactile, label = visual.to(args.device), tactile.to(args.device), label.to(args.device)
                     _, val_pred = net(visual, tactile)
                     batch_loss = loss(val_pred, label.float())
@@ -92,6 +116,7 @@ def trainer(net, loss, optimizer, scheduler, dataset, writer, log_path, args):
 
             writer.add_scalar('best/train_acc', best_train_acc / train_data_length, epoch)
             writer.add_scalar('best/val_acc', best_val_acc / val_data_length, epoch)
+            # torch.save(net.state_dict(),f'{log_path}/{epoch}.pth')
         scheduler.step()
 
     best_train_acc = best_train_acc / train_data_length

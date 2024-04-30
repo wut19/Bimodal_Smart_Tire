@@ -26,7 +26,7 @@ class MMVTDataset(Dataset):
                     - class_2
                     - ...
                 - modality_2(inside visual)
-                - ...crop_size: 300
+                - ...
     This structure is easy to be generalized to more visual and tactile modalities.
 
     TODO: add meta information under data_dir/, that is

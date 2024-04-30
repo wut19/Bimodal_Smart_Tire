@@ -1,11 +1,11 @@
 # experiment
-exp: logs/wo_outside_visual/seg_visual_tactile/resnet
+exp: logs/w_outside_visual/outside_visual_only/mmvtt
 alg: resnet
 
 # train
 data_dir: VisualTactileData_all
 data_split: 0.7
-epoch: 80
+epoch: 50
 batch_size: 32
 random_seed: 0
 num_workers: 4
@@ -26,10 +26,9 @@ loss: CrossEntropyLoss
 img_size: 128
 patch_size: 16
 in_channels: 3
-visual_modality: {}
+visual_modality: {'1': 'vt', '2': 'vt', '3': 'vt'}
 random_visual: True
-tactile_modality: {'v': 'vt', 't': 't'}
-num_classes: 12
+tactile_modality: {'t': 't'}
 
 ##  network
 # Convlayer sustitute

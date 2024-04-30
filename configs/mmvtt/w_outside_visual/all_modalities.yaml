@@ -1,23 +1,23 @@
 # experiment
-exp: logs/VTT/seg_T/tactile_only
+exp: logs/w_outside_visual/all_modalities/mmvtt
 alg: MMVTT
 
 # train
-data_dir: VisualTactileData_segT
+data_dir: VisualTactileData_all
 data_split: 0.7
-epoch: 1000
+epoch: 50
 batch_size: 32
 random_seed: 0
 num_workers: 4
 device: 'cuda:1'
-val_interval: 10
+val_interval: 2
 
 optimizer: Adam #'SGD'
-lr: 0.0001
+lr: 3e-5
 momentum: 0.9
 
 scheduler: StepLR
-period: 100
+period: 10
 gamma: 0.9
 
 loss: CrossEntropyLoss
@@ -26,13 +26,18 @@ loss: CrossEntropyLoss
 img_size: 128
 patch_size: 16
 in_chans: 3
-visual_modality: {}
+visual_modality: {'1': 'v', '2': 'v', '3': 'v'}
 random_visual: True
-tactile_modality: {'t':'t'}
+tactile_modality: {'v':'vt', 't': 't'}
 
-# network
-visual_embed_mapping: {}  # in above order, e.g. 0-> '1', 1-> '2', 2 -> '3'
-tactile_embed_mapping: {0: [0]}
+## network
+# resnet
+out_channels: 64
+kernel_size: 7
+stride: 1
+padding: 3
+bias: False
+# attention
 embed_dim: 384
 depth: 1
 num_heads: 4
