@@ -4,8 +4,8 @@ alg: MMVTT
 
 # train
 data_dir: VisualTactileData_all
-data_split: 0.8
-epoch: 50
+data_split: 0.7
+epoch: 80
 batch_size: 32
 random_seed: 0
 num_workers: 4

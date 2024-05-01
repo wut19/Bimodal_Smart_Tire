@@ -1,13 +1,13 @@
 # experiment
-exp: logs/w_outside_visual/outside_visual&tactile/mmvtt
+exp: logs/w_outside_visual/outside_visual_and_tactile/mmvtt
 alg: MMVTT
 
 # train
 data_dir: VisualTactileData_all
 data_split: 0.7
-epoch: 50
+epoch: 80
 batch_size: 32
-random_seed: 128
+random_seed: 0
 num_workers: 4
 device: 'cuda:1'
 val_interval: 2

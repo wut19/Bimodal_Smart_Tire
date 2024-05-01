@@ -37,6 +37,7 @@ nvidia-nccl-cu11==2.14.3
 nvidia-nvtx-cu11==11.7.91
 oauthlib==3.2.2
 omegaconf==2.3.0
+opencv-python==4.9.0.80
 packaging==24.0
 pillow==10.3.0
 protobuf==4.25.3
