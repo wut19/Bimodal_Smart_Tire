@@ -126,9 +126,14 @@ def plot_results(args):
         preds = np.concatenate(preds, 0).reshape(-1,)
         gts = np.concatenate(gts, 0).reshape(-1,)
     # print(preds, gts)
-    nums = np.array([np.sum(gts==i) for i in range(12)]).reshape(12,1).astype(np.float32)
+
+    # num_classes=12
+    # display_labels = [1,2,3,4,5,6,7,8,9,10,11,12]
+    num_classes=4
+    display_labels = ['normal', 'worn', 'broken', 'nailed']
+    nums = np.array([np.sum(gts==i) for i in range(num_classes)]).reshape(num_classes,1).astype(np.float32)
     confusion_mat = confusion_matrix(gts, preds)
-    disp = ConfusionMatrixDisplay(confusion_matrix=confusion_mat/nums, display_labels=[1,2,3,4,5,6,7,8,9,10,11,12])
+    disp = ConfusionMatrixDisplay(confusion_matrix=confusion_mat/nums, display_labels=display_labels)
     disp.plot(
         include_values=True,            
         cmap=plt.cm.Blues,                 

@@ -1,0 +1,42 @@
+# experiment
+exp: logs/broken_detection/resnet
+alg: resnet
+
+# train
+data_dir: BrokenData
+data_split: 0.7
+epoch: 80
+batch_size: 32
+random_seed: 0
+num_workers: 4
+device: 'cuda:1'
+val_interval: 2
+
+optimizer: Adam #'SGD'
+lr: 1e-5
+momentum: 0.9
+
+scheduler: StepLR
+period: 5
+gamma: 0.9
+
+loss: CrossEntropyLoss
+
+# data
+img_size: 128
+patch_size: 16
+in_channels: 3
+visual_modality: {}
+random_visual: True
+tactile_modality: {'vt': 'vt'}
+num_classes: 4
+
+##  network
+# Convlayer sustitute
+out_channels: 64
+kernel_size: 7
+stride: 1
+padding: 3
+bias: False
+# feature dim
+feature_dim: 384
