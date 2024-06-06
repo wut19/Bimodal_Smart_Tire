@@ -16,7 +16,6 @@ Install terrain classification dataset ```VisualTactileDataset``` and breakage d
 ## Train
 ```
 python train.py --cfg [config_file_name].yaml
-
 ```
 ## Test and Visualize the Results
 ```
