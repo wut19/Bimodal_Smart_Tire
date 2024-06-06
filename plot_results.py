@@ -111,6 +111,8 @@ def plot_results(args):
     net.load_state_dict(torch.load(os.path.join(dir, file_wts)))
     net.to(cfg.device)
     net.eval()
+    total = sum([param.nelement() for param in net.parameters()])
+    print("parameters:", total)
 
     preds = []
     gts = []
