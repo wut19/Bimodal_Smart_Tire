@@ -1,4 +1,4 @@
-# VTire: A Bimodal Visuotactile Tire with High-Resolution Sensing Capability
+# VTire: A Bimodal Visuotactile Tire with High-Resolution Sensing Capability [IEEE TMech 2025]
 <div align="center">
 <img src=media/smart_tire.png width=90% />
 </div>
